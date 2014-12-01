@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-
+#ifndef _3DS
 
 #define arm_decode_data_proc_reg()                                            \
   u32 rn = (opcode >> 16) & 0x0F;                                             \
@@ -182,3 +182,5 @@ u32 print_disasm_arm_instruction(u32 opcode)
     // Coprocessor, SWI
     case 0x7:
   }
+
+#endif

@@ -72,7 +72,9 @@ void warm_finish(void);
 /* internal */
 #ifdef WARM_CODE
 
+#ifndef _3DS
 #include <linux/ioctl.h>
+#endif
 
 #define WARM_IOCTL_BASE 'A'
 

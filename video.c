@@ -115,6 +115,19 @@ static u16 *screen_pixels = NULL;
 #define get_screen_pitch()                                                    \
   resolution_width                                                            \
 
+#elif defined(_3DS)
+const u32 video_scale = 1;
+#define screen_texture *(u16*)&gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL)[0]
+#define current_screen_texture *(u16*)&gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL)[0]
+#define screen_pixels *(u16*)&gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL)[0]
+static u32 screen_pitch = 240*3;
+
+#define get_screen_pixels()                                                   \
+  screen_pixels                                                               \
+
+#define get_screen_pitch()                                                    \
+  screen_pitch  
+                                                      \
 #else
 
 #ifdef GP2X_BUILD
@@ -3502,6 +3515,8 @@ void flip_screen()
     warm_cache_op_all(WOP_D_CLEAN);
     SDL_BlitSurface(screen, NULL, hw_screen, NULL);
   }
+#elif defined(_3DS)
+	//TODO: 3DS
 #else
   SDL_Flip(screen);
 #endif
@@ -3604,7 +3619,7 @@ void init_video()
   GE_CMD(NOP, 0);
 }
 
-#elif defined(WIZ_BUILD) || defined(PND_BUILD) || defined (RPI_BUILD)
+#elif defined(WIZ_BUILD) || defined(PND_BUILD) || defined (RPI_BUILD)  || defined (_3DS)
 
 void init_video()
 {
@@ -3800,19 +3815,22 @@ void clear_screen(u16 color)
     *p++ = col;
 }
 
-#elif defined(PND_BUILD) || defined(RPI_BUILD)
+#elif defined(PND_BUILD) || defined(RPI_BUILD) || defined(_3DS)
 
 void video_resolution_large()
 {
 #if defined (RPI_BUILD)
   resolution_width = 480;
+#elif defined (_3DS)
+  resolution_width = 400;
 #else
   resolution_width = 400;
 #endif
   resolution_height = 272;
-
+#ifndef _3DS
   fb_set_mode(resolution_width, resolution_height, 1, 15, screen_filter, screen_filter2);
   flip_screen();
+#endif
   clear_screen(0);
 }
 
@@ -3820,9 +3838,10 @@ void video_resolution_small()
 {
   resolution_width = 240;
   resolution_height = 160;
-
+#ifndef _3DS
   fb_set_mode(resolution_width, resolution_height, 3, screen_scale, screen_filter, screen_filter2);
   flip_screen();
+#endif
   clear_screen(0);
 }
 

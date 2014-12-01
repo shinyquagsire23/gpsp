@@ -69,7 +69,7 @@
 #define file_write_mem_variable(filename_tag, variable)                       \
   file_write_mem(filename_tag, &variable, sizeof(variable))                   \
 
-#ifdef PSP_BUILD
+#if defined(PSP_BUILD)
   #define fastcall
 
   #include <pspkernel.h>
@@ -111,7 +111,13 @@
   #include <time.h>
   #include <stdio.h>
 #else
+
+#if defined(_3DS)
+  #include <3ds.h>
+  #define file_tag_type s32
+#else
   #include "SDL.h"
+#endif
 
 #ifdef ARM_ARCH
   #define function_cc
@@ -119,6 +125,7 @@
   #define function_cc __attribute__((regparm(2)))
 #endif
 
+#ifndef _3DS
   typedef unsigned char u8;
   typedef signed char s8;
   typedef unsigned short int u16;
@@ -127,6 +134,7 @@
   typedef signed int s32;
   typedef unsigned long long int u64;
   typedef signed long long int s64;
+#endif
 
   #define convert_palette(value)                                              \
     value = ((value & 0x1F) << 11) | ((value & 0x03E0) << 1) | (value >> 10)  \
@@ -229,7 +237,12 @@ typedef u32 fixed8_24;
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <sys/time.h>
+
+#ifndef _3DS
 #include "SDL.h"
+#endif
+
 #include "cpu.h"
 #include "memory.h"
 #include "video.h"
@@ -237,10 +250,14 @@ typedef u32 fixed8_24;
 #include "sound.h"
 #include "main.h"
 #include "gui.h"
+
+#ifndef _3DS
 #include "zip.h"
+#endif
+
 #include "cheats.h"
 
-#ifdef ARM_ARCH
+#if defined(ARM_ARCH) && !defined(_3DS)
   #include "arm/warm.h"
 #endif
 
@@ -272,6 +289,10 @@ typedef u32 fixed8_24;
 
 #ifdef RPI_BUILD
   #include "raspberrypi/rpi.h"
+#endif
+
+#ifdef _3DS
+  #include "3ds/_3ds.h"
 #endif
 
 #endif

@@ -249,7 +249,8 @@ int main(int argc, char *argv[])
 #endif
 
 #ifndef PC_BUILD
-  gpsp_plat_init();
+  //TODO
+  //gpsp_plat_init();
 #endif
   load_config_file();
 
@@ -876,7 +877,7 @@ void synchronize()
 #if !defined(GP2X_BUILD) && !defined(PND_BUILD) && !defined(RPI_BUILD)
   char char_buffer[64];
   sprintf(char_buffer, "gpSP: %2d (%2d) fps", fps, frames_drawn);
-  SDL_WM_SetCaption(char_buffer, "gpSP");
+  //SDL_WM_SetCaption(char_buffer, "gpSP");
 #endif
 }
 
@@ -898,10 +899,11 @@ void quit()
 #ifdef PSP_BUILD
   sceKernelExitGame();
 #else
-  SDL_Quit();
+  //SDL_Quit();
 
 #ifndef PC_BUILD
-  gpsp_plat_quit();
+  //TODO
+  //gpsp_plat_quit();
 #endif
 
   exit(0);
@@ -955,7 +957,7 @@ u32 file_length(char *dummy, FILE *fp)
 
 void delay_us(u32 us_count)
 {
-  SDL_Delay(us_count / 1000);
+  //SDL_Delay(us_count / 1000);
 }
 
 void get_ticks_us(u64 *ticks_return)
@@ -968,7 +970,7 @@ void get_ticks_us(u64 *ticks_return)
 void delay_us(u32 us_count)
 {
   //usleep(us_count);
-  SDL_Delay(us_count / 1000);
+  //SDL_Delay(us_count / 1000);
 }
 
 void get_ticks_us(u64 *ticks_return)

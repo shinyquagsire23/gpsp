@@ -189,7 +189,7 @@ extern u8 bit_count[256];
 
 #include "psp/mips_emit.h"
 
-#elif defined(ARM_ARCH)
+#elif defined(ARM_ARCH) || defined(_3DS)
 
 #include "arm/arm_emit.h"
 

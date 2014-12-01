@@ -20,6 +20,25 @@
 #ifndef ARM_EMIT_H
 #define ARM_EMIT_H
 
+#ifdef _3DS
+/* cache operations (warm_cache_op_*):
+ * o clean - write dirty data to memory, but also leave in cache.
+ * o invalidate - throw away everything in cache, losing dirty data.
+ *
+ * Write buffer is always drained, no ops will only drain WB
+ */
+#define WOP_D_CLEAN		(1 << 0)
+#define WOP_D_INVALIDATE	(1 << 1)
+#define WOP_I_INVALIDATE	(1 << 2)
+
+/* change C and B bits (warm_change_cb_*)
+ * if is_set in not zero, bits are set, else cleared.
+ * the address for range function is virtual address.
+ */
+#define WCB_C_BIT		(1 << 0)
+#define WCB_B_BIT		(1 << 1)
+#endif
+
 #include "arm_codegen.h"
 
 u32 arm_update_gba_arm(u32 pc);
@@ -646,10 +665,10 @@ u8 *last_bios_translation_ptr = bios_translation_cache;
 #define translate_invalidate_dcache_one(which)                                \
   if (which##_translation_ptr > last_##which##_translation_ptr)               \
   {                                                                           \
-    warm_cache_op_range(WOP_D_CLEAN, last_##which##_translation_ptr,          \
+    /*warm_cache_op_range(WOP_D_CLEAN, last_##which##_translation_ptr,          \
       which##_translation_ptr - last_##which##_translation_ptr);              \
     warm_cache_op_range(WOP_I_INVALIDATE, last_##which##_translation_ptr, 32);\
-    last_##which##_translation_ptr = which##_translation_ptr;                 \
+    last_##which##_translation_ptr = which##_translation_ptr;*/                 \
   }
 
 #define translate_invalidate_dcache()                                         \
@@ -660,7 +679,7 @@ u8 *last_bios_translation_ptr = bios_translation_cache;
 }
 
 #define invalidate_icache_region(addr, size)                                  \
-  warm_cache_op_range(WOP_I_INVALIDATE, addr, size)
+  //warm_cache_op_range(WOP_I_INVALIDATE, addr, size)
 
 
 #define block_prologue_size 0

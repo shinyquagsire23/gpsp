@@ -2169,9 +2169,11 @@ u32 load_gamepak(char *name)
 #ifdef WIZ_BUILD
   file_size = wiz_load_gamepak(name);
 #else
+  #ifndef _3DS
   if(!strcmp(dot_position, ".zip"))
     file_size = load_file_zip(name);
   else
+  #endif
     file_size = load_gamepak_raw(name);
 #endif
 

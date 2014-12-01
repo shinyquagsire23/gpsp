@@ -4146,8 +4146,8 @@ void function_cc step_debug(u32 pc, u32 cycles)
   {
     u32 key = 0;
 
-    SDL_LockMutex(sound_mutex);
-    SDL_PauseAudio(1);
+    //SDL_LockMutex(sound_mutex);
+    //SDL_PauseAudio(1);
 
     if(output_field >= num_output_fields)
     {
@@ -4281,8 +4281,8 @@ void function_cc step_debug(u32 pc, u32 cycles)
         quit();
     }
 
-    SDL_PauseAudio(0);
-    SDL_UnlockMutex(sound_mutex);
+    //SDL_PauseAudio(0);
+    //SDL_UnlockMutex(sound_mutex);
   }
 
   last_instruction = reg[REG_PC];

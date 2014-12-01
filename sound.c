@@ -19,7 +19,7 @@
 
 
 #include "common.h"
-#include <SDL.h>
+//#include <SDL.h>
 u32 global_enable_audio = 1;
 
 direct_sound_struct direct_sound_channel[2];
@@ -31,8 +31,8 @@ u32 sound_frequency = 22050;
 u32 sound_frequency = 44100;
 #endif
 
-SDL_mutex *sound_mutex;
-static SDL_cond *sound_cv;
+//SDL_mutex *sound_mutex;
+//static SDL_cond *sound_cv;
 
 #ifdef PSP_BUILD
 u32 audio_buffer_size_number = 1;
@@ -453,7 +453,7 @@ void update_gbc_sound(u32 cpu_ticks)
     gbc_sound_partial_ticks &= 0xFFFF;
   }
 
-  SDL_LockMutex(sound_mutex);
+  //SDL_LockMutex(sound_mutex);
   if(synchronize_flag)
   {
     if(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >=
@@ -462,7 +462,7 @@ void update_gbc_sound(u32 cpu_ticks)
       while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >
        (audio_buffer_size * 3 / 2))
       {
-        SDL_CondWait(sound_cv, sound_mutex);
+        //SDL_CondWait(sound_cv, sound_mutex);
       }
 
 #ifdef PSP_BUILD
@@ -568,9 +568,9 @@ void update_gbc_sound(u32 cpu_ticks)
   gbc_sound_buffer_index =
    (gbc_sound_buffer_index + (buffer_ticks * 2)) % BUFFER_SIZE;
 
-  SDL_UnlockMutex(sound_mutex);
+  //SDL_UnlockMutex(sound_mutex);
 
-  SDL_CondSignal(sound_cv);
+  //SDL_CondSignal(sound_cv);
 }
 
 #define sound_copy_normal()                                                   \
@@ -601,7 +601,7 @@ void update_gbc_sound(u32 cpu_ticks)
   }                                                                           \
 
 
-void sound_callback(void *userdata, Uint8 *stream, int length)
+void sound_callback(void *userdata, u8 *stream, int length)
 {
   u32 sample_length = length / 2;
   u32 _length;
@@ -610,12 +610,12 @@ void sound_callback(void *userdata, Uint8 *stream, int length)
   s16 *source;
   s32 current_sample;
 
-  SDL_LockMutex(sound_mutex);
+  //SDL_LockMutex(sound_mutex);
 
   while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) <
    length && !sound_exit_flag)
   {
-    SDL_CondWait(sound_cv, sound_mutex);
+    //SDL_CondWait(sound_cv, sound_mutex);
   }
 
   if(global_enable_audio)
@@ -651,9 +651,9 @@ void sound_callback(void *userdata, Uint8 *stream, int length)
     }
   }
 
-  SDL_CondSignal(sound_cv);
+  //SDL_CondSignal(sound_cv);
 
-  SDL_UnlockMutex(sound_mutex);
+  //SDL_UnlockMutex(sound_mutex);
 }
 
 // Special thanks to blarrg for the LSFR frequency used in Meridian, as posted
@@ -695,7 +695,7 @@ void reset_sound()
   gbc_sound_struct *gs = gbc_sound_channel;
   u32 i;
 
-  SDL_LockMutex(sound_mutex);
+  //SDL_LockMutex(sound_mutex);
 
   sound_on = 0;
   sound_buffer_base = 0;
@@ -729,27 +729,27 @@ void reset_sound()
     gs->active_flag = 0;
   }
 
-  SDL_UnlockMutex(sound_mutex);
+  //SDL_UnlockMutex(sound_mutex);
 }
 
 void sound_exit()
 {
   gbc_sound_buffer_index =
    (sound_buffer_base + audio_buffer_size) % BUFFER_SIZE;
-  SDL_PauseAudio(1);
+  //SDL_PauseAudio(1);
   sound_exit_flag = 1;
-  SDL_CondSignal(sound_cv);
-  SDL_CloseAudio();
-  SDL_Delay(200);
-  SDL_DestroyMutex(sound_mutex);
-  sound_mutex = NULL;
-  SDL_DestroyCond(sound_cv);
-  sound_cv = NULL;
+  //SDL_CondSignal(sound_cv);
+  //SDL_CloseAudio();
+  //SDL_Delay(200);
+  //SDL_DestroyMutex(sound_mutex);
+  //sound_mutex = NULL;
+  //SDL_DestroyCond(sound_cv);
+  //sound_cv = NULL;
 }
 
 void init_sound(int need_reset)
 {
-  SDL_AudioSpec sound_settings;
+  //SDL_AudioSpec sound_settings;
 
   sound_exit_flag = 0;
 #ifdef PSP_BUILD
@@ -759,7 +759,7 @@ void init_sound(int need_reset)
 //  audio_buffer_size = 16384;
 #endif
 
-  SDL_AudioSpec desired_spec =
+  /*SDL_AudioSpec desired_spec =
   {
     sound_frequency,
     AUDIO_S16,
@@ -770,14 +770,14 @@ void init_sound(int need_reset)
     0,
     sound_callback,
     NULL
-  };
+  };*/
 
-  sound_mutex = SDL_CreateMutex();
-  sound_cv = SDL_CreateCond();
+  //sound_mutex = SDL_CreateMutex();
+  //sound_cv = SDL_CreateCond();
 
-  SDL_OpenAudio(&desired_spec, &sound_settings);
-  sound_frequency = sound_settings.freq;
-  audio_buffer_size = sound_settings.size;
+  //SDL_OpenAudio(&desired_spec, &sound_settings);
+  //sound_frequency = sound_settings.freq;
+  //audio_buffer_size = sound_settings.size;
   u32 i = audio_buffer_size / 16;
   for (audio_buffer_size_number = 0; i && (i & 1) == 0; i >>= 1)
     audio_buffer_size_number++;
@@ -794,7 +794,7 @@ void init_sound(int need_reset)
   if (need_reset)
     reset_sound();
 
-  SDL_PauseAudio(0);
+  //SDL_PauseAudio(0);
 }
 
 #define sound_savestate_builder(type)                                       \

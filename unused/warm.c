@@ -35,8 +35,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/utsname.h>
-#include <sys/syscall.h>
+//#include <sys/utsname.h>
+//#include <sys/syscall.h>
 #include <errno.h>
 
 #define WARM_CODE
@@ -51,7 +51,7 @@ static int kernel_version;
 
 static void sys_cacheflush(void *start, void *end)
 {
-#ifdef __ARM_EABI__
+#if defined(__ARM_EABI__) && !defined(_3DS)
 	/* EABI version */
 	int num = __ARM_NR_cacheflush;
 	__asm__("mov  r0, %0 ;"
@@ -60,6 +60,8 @@ static void sys_cacheflush(void *start, void *end)
 		"mov  r7, %2 ;"
 		"swi  0" : : "r" (start), "r" (end), "r" (num)
 			: "r0", "r1", "r2", "r3", "r7");
+#elif defined(_3DS)
+
 #else
 	/* OABI */
 	__asm__("mov  r0, %0 ;"

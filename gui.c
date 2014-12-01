@@ -626,7 +626,7 @@ typedef struct _menu_type menu_type;
   gamepad_help[number],                                                       \
   number,                                                                     \
   KEY_SELECTION_OPTION                                                        \
-}                                                                             \
+}   
 
 #else
 
@@ -787,6 +787,11 @@ u32 gamepad_config_line_to_button[] =
 u32 gamepad_config_line_to_button[] =
  { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 12, 13, 14, 15 };
 
+#endif
+
+#ifdef _3DS
+u32 gamepad_config_line_to_button[] =
+ { 8, 6, 7, 9, 1, 2, 3, 0, 4, 5, 11, 10 };
 #endif
 
 static const char *scale_options[] =
@@ -1784,10 +1789,42 @@ u32 menu(u16 *original_screen)
 
 #endif
 
+#if defined(_3DS)
+
+  menu_option_type gamepad_config_options[] =
+  {
+    gamepad_config_option("A            ", 0),
+    gamepad_config_option("B            ", 1),
+    gamepad_config_option("Select       ", 2),
+    gamepad_config_option("Start        ", 3),
+    gamepad_config_option("D-pad right  ", 4),
+    gamepad_config_option("D-pad left   ", 5),
+    gamepad_config_option("D-pad up     ", 6),
+    gamepad_config_option("D-pad down   ", 7),
+    gamepad_config_option("Right Trigger", 8),
+    gamepad_config_option("Left Trigger ", 9),
+    gamepad_config_option("X            ", 10),
+    gamepad_config_option("Y            ", 11),
+    gamepad_config_option("ZL           ", 12),
+    gamepad_config_option("ZR           ", 13),
+    gamepad_config_option("C-stick right", 14),
+    gamepad_config_option("C-stick left ", 15),
+    gamepad_config_option("C-stick up   ", 16),
+    gamepad_config_option("C-stick down ", 17),
+    gamepad_config_option("C-pad right  ", 18),
+    gamepad_config_option("C-pad left   ", 19),
+    gamepad_config_option("C-pad up     ", 20),
+    gamepad_config_option("C-pad down   ", 21),
+
+    submenu_option(NULL, "Back", "Return to the main menu.", 23)
+  };
+
+#endif
+
   make_menu(gamepad_config, submenu_gamepad, NULL);
 #ifdef RPI_BUILD
   make_menu(keyboard_config, submenu_keyboard, NULL);
-#else
+#elif !defined(_3DS)
   make_menu(analog_config, submenu_analog, NULL);
 #endif
 
@@ -1817,7 +1854,7 @@ u32 menu(u16 *original_screen)
 #ifdef RPI_BUILD
     submenu_option(&keyboard_config_menu, "Configure keyboard input",
      "Select to change the in-game behavior of the keyboard.", 7),
-#else
+#elif !defined(_3DS)
     submenu_option(&analog_config_menu, "Configure analog input",
      "Select to change the in-game behavior of the analog nub.", 7),
 #endif
@@ -1869,12 +1906,12 @@ u32 menu(u16 *original_screen)
   video_resolution_large();
 
 #ifndef GP2X_BUILD
-  SDL_LockMutex(sound_mutex);
+  //SDL_LockMutex(sound_mutex);
 #endif
-  SDL_PauseAudio(1);
+  //SDL_PauseAudio(1);
 
 #ifndef GP2X_BUILD
-  SDL_UnlockMutex(sound_mutex);
+  //SDL_UnlockMutex(sound_mutex);
 #endif
 
   if(gamepak_filename[0] == 0)
@@ -1921,7 +1958,7 @@ u32 menu(u16 *original_screen)
          ((u32 *)display_option->options)[*(display_option->current_option)]);
       } else if(display_option->option_type & KEY_SELECTION_OPTION) {
         sprintf(line_buffer, display_option->display_string,
-         SDL_GetKeyName(*(display_option->current_option)));
+         //SDL_GetKeyName(*(display_option->current_option)));
         line_buffer[15] = toupper(line_buffer[15]);
       }
 #endif
@@ -2031,7 +2068,7 @@ u32 menu(u16 *original_screen)
   menu_get_clock_speed();
   set_clock_speed();
 
-  SDL_PauseAudio(0);
+  //SDL_PauseAudio(0);
   num_skipped_frames = 100;
 
   return return_value;
