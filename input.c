@@ -1037,25 +1037,78 @@ void  init_input()
 
 #ifdef _3DS
 
-//TODO: Proper map
-u32 gamepad_config_map[16] =
+u32 gamepad_config_map[32] =
 {
-  BUTTON_ID_MENU,               // Triangle
-  BUTTON_ID_A,                  // Circle
-  BUTTON_ID_B,                  // Cross
-  BUTTON_ID_START,              // Square
-  BUTTON_ID_L,                  // Ltrigger
-  BUTTON_ID_R,                  // Rtrigger
-  BUTTON_ID_DOWN,               // Down
+  BUTTON_ID_A,                  // A
+  BUTTON_ID_B,                  // B
+  BUTTON_ID_MENU,               // Select
+  BUTTON_ID_START,              // Start
+  BUTTON_ID_RIGHT,              // Right
   BUTTON_ID_LEFT,               // Left
   BUTTON_ID_UP,                 // Up
-  BUTTON_ID_RIGHT,              // Right
-  BUTTON_ID_SELECT,             // Select
-  BUTTON_ID_START,              // Start
-  BUTTON_ID_UP,                 // Analog up
-  BUTTON_ID_DOWN,               // Analog down
-  BUTTON_ID_LEFT,               // Analog left
-  BUTTON_ID_RIGHT               // Analog right
+  BUTTON_ID_DOWN,               // Down
+  BUTTON_ID_R,                  // R
+  BUTTON_ID_L,                  // L
+  BUTTON_ID_START,              // X
+  BUTTON_ID_SELECT,             // Y
+  -1,
+  -1,
+  BUTTON_ID_R,                  // ZR
+  BUTTON_ID_L,                  // ZL
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  BUTTON_ID_MENU,               // Touch
+  -1,
+  -1,
+  -1,
+  BUTTON_ID_UP,                 // C-stick up
+  BUTTON_ID_DOWN,               // C-stick down
+  BUTTON_ID_LEFT,               // C-stick left
+  BUTTON_ID_RIGHT,               // C-stick right
+  BUTTON_ID_UP,                 // C-pad up
+  BUTTON_ID_DOWN,               // C-pad down
+  BUTTON_ID_LEFT,               // C-pad left
+  BUTTON_ID_RIGHT               // C-pad right
+};
+
+u32 gamepad_config[32] =
+{
+  BUTTON_A,                  // A
+  BUTTON_B,                  // B
+  BUTTON_SELECT,               // Select
+  BUTTON_START,              // Start
+  BUTTON_RIGHT,              // Right
+  BUTTON_LEFT,               // Left
+  BUTTON_UP,                 // Up
+  BUTTON_DOWN,               // Down
+  BUTTON_R,                  // R
+  BUTTON_L,                  // L
+  BUTTON_START,              // X
+  BUTTON_SELECT,             // Y
+  -1,
+  -1,
+  BUTTON_R,                  // ZR
+  BUTTON_L,                  // ZL
+  -1,
+  -1,
+  -1,
+  -1,
+  -1,
+  -2,               // Touch
+  -1,
+  -1,
+  -1,
+  BUTTON_UP,                 // C-stick up
+  BUTTON_DOWN,               // C-stick down
+  BUTTON_LEFT,               // C-stick left
+  BUTTON_RIGHT,               // C-stick right
+  BUTTON_UP,                 // C-pad up
+  BUTTON_DOWN,               // C-pad down
+  BUTTON_LEFT,               // C-pad left
+  BUTTON_RIGHT               // C-pad right
 };
 
 gui_action_type get_gui_input()
@@ -1064,76 +1117,84 @@ gui_action_type get_gui_input()
    gui_action_type gui_action = CURSOR_NONE;
    int action = BUTTON_NONE;
 
-   /*delay_us(30000);
+   delay_us(30000);
 
-   while(SDL_PollEvent(&event)) {
-      switch(event.type) {
-         case SDL_QUIT:
-           quit();
+   gspWaitForVBlank();
+   hidScanInput();
+   u32 kDown = hidKeysDown();
+   u32 kHeld = hidKeysHeld();
+   u32 button_name = -1;
+   int i = 0;
 
-         case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_ESCAPE) {
-               action = BUTTON_B;
-            } else {
-               action = key_map(event.key.keysym.sym);
-            }
-         break;
+   for(i = 0; i < 32; i++)
+   {
+	   if(kDown & BIT(i))
+		   button_name = gamepad_config_map[i];
+   }
 
-         case SDL_JOYBUTTONDOWN:
-            action = joy_map(event.jbutton.button+JOY_BUTTON_1);
-         break;
-
-         case SDL_JOYAXISMOTION: {
-            if (event.jaxis.axis==0) { //Left-Right
-               if (event.jaxis.value < -TRESHOLD) action = joy_map(JOY_ASIX_XM);
-                  else if (event.jaxis.value > TRESHOLD) action = joy_map(JOY_ASIX_XP);
-            }
-            if (event.jaxis.axis==1) {  //Up-Down
-               if (event.jaxis.value < -TRESHOLD) action = joy_map(JOY_ASIX_YM);
-                  else if (event.jaxis.value > TRESHOLD) action = joy_map(JOY_ASIX_YP);
-            }
-        }
-        default:
-           break;
-     }
-  }
-
-  switch (action) {
-     case BUTTON_UP:
+  switch (button_name) {
+     case BUTTON_ID_UP:
         gui_action = CURSOR_UP;
      break;
 
-     case BUTTON_DOWN:
+     case BUTTON_ID_DOWN:
         gui_action = CURSOR_DOWN;
      break;
 
-     case BUTTON_LEFT:
+     case BUTTON_ID_LEFT:
         gui_action = CURSOR_LEFT;
      break;
 
-     case BUTTON_RIGHT:
+     case BUTTON_ID_RIGHT:
         gui_action = CURSOR_RIGHT;
     break;
 
-    case BUTTON_START:
-    case BUTTON_A:
+    case BUTTON_ID_START:
+    case BUTTON_ID_A:
        gui_action = CURSOR_SELECT;
     break;
 
-    case BUTTON_SELECT:
-    case BUTTON_B:
+    case BUTTON_ID_MENU:
+    case BUTTON_ID_B:
        gui_action = CURSOR_EXIT;
     break;
 
     default:
     break;
-  }*/
+  }
 
   return gui_action;
 }
 
 u32 update_input()
 {
+   gui_action_type gui_action = CURSOR_NONE;
+   int action = BUTTON_NONE;
+
+   gspWaitForVBlank();
+   hidScanInput();
+   u32 kDown = hidKeysDown();
+   u32 kHeld = hidKeysHeld();
+   int newkey;
+
+   newkey = key;
+   int i = 0;
+
+   for(i = 0; i < 32; i++)
+   {
+	   if(kDown & BIT(i))
+		   newkey |= gamepad_config[i];
+   }
+
+  if (key != newkey) {
+     key = newkey;
+     trigger_key(key);
+     io_registers[REG_P1] = (~key) & 0x3FF;
+  }
+
+  if(kHeld & (KEY_X))
+     exit_time = 1;
+
   /*SDL_Event event;
   int newkey;
 

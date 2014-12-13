@@ -17,6 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+// Add Sanic for extra speed
+/*
+░░░░░░░░░▄▄▄▄▄
+░░░░░░░░▀▀▀██████▄▄▄
+░░░░░░▄▄▄▄▄░░█████████▄
+░░░░░▀▀▀▀█████▌░▀▐▄░▀▐█
+░░░▀▀█████▄▄░▀██████▄██
+░░░▀▄▄▄▄▄░░▀▀█▄▀█════█▀
+░░░░░░░░▀▀▀▄░░▀▀███░▀░░░░░░▄▄
+░░░░░▄███▀▀██▄████████▄░▄▀▀▀██▌
+░░░██▀▄▄▄██▀▄███▀░▀▀████░░░░░▀█▄
+▄▀▀▀▄██▄▀▀▌████▒▒▒▒▒▒███░░░░▌▄▄▀
+▌░░░░▐▀████▐███▒▒▒▒▒▐██▌
+▀▄░░▄▀░░░▀▀████▒▒▒▒▄██▀
+░░▀▀░░░░░░▀▀█████████▀
+░░░░░░░░▄▄██▀██████▀█
+░░░░░░▄██▀░░░░░▀▀▀░░█
+░░░░░▄█░░░░░░░░░░░░░▐▌
+░▄▄▄▄█▌░░░░░░░░░░░░░░▀█▄▄▄▄▀▀▄
+▌░░░░░▐░░░░░░░░░░░░░░░░▀▀▄▄▄▀
+*/
+
 // Important todo:
 // - stm reglist writeback when base is in the list needs adjustment
 // - block memory needs psr swapping and user mode reg swapping
@@ -4397,6 +4419,8 @@ void execute_arm(u32 cycles)
 
     collapse_flags();
     cycles = update_gba();
+    if(exit_time)
+        break;
     continue;
 
     do

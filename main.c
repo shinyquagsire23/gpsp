@@ -46,49 +46,13 @@ frameskip_type current_frameskip_type = auto_frameskip;
 u32 global_cycles_per_instruction = 1;
 #endif
 
-u32 random_skip = 0;
-u32 fps_debug = 0;
 
-u32 frameskip_value = 2;
-
-u64 last_frame_interval_timestamp;
-
-u32 skip_next_frame = 0;
-
-u32 frameskip_counter = 0;
-
-u32 cpu_ticks = 0;
-u32 frame_ticks = 0;
-
-u32 execute_cycles = 960;
-s32 video_count = 960;
-u32 ticks;
-
-u32 arm_frame = 0;
-u32 thumb_frame = 0;
-u32 last_frame = 0;
-
-u32 cycle_memory_access = 0;
-u32 cycle_pc_relative_access = 0;
-u32 cycle_sp_relative_access = 0;
-u32 cycle_block_memory_access = 0;
-u32 cycle_block_memory_sp_access = 0;
-u32 cycle_block_memory_words = 0;
-u32 cycle_dma16_words = 0;
-u32 cycle_dma32_words = 0;
-u32 flush_ram_count = 0;
-u32 gbc_update_count = 0;
-u32 oam_update_count = 0;
-
-u32 synchronize_flag = 1;
-
-u32 update_backup_flag = 1;
 #ifdef GP2X_BUILD
 u32 clock_speed = 200;
 #else
 u32 clock_speed = 333;
 #endif
-char main_path[512];
+//char main_path[512];
 
 void trigger_ext_event();
 
@@ -224,7 +188,7 @@ void init_main()
   flush_translation_cache_bios();
 }
 
-int main(int argc, char *argv[])
+int main_(int argc, char *argv[])
 {
   char bios_filename[512];
   int ret;
@@ -573,6 +537,7 @@ u32 update_gba()
 
           if(no_alpha)
             io_registers[REG_BLDCNT] = 0;
+		//skip_next_frame = 1;
           update_scanline();
 
           // If in visible area also fire HDMA
@@ -645,11 +610,11 @@ u32 update_gba()
 
           update_gbc_sound(cpu_ticks);
 
-          if(fps_debug)
+          //if(fps_debug)
           {
             char print_buffer[32];
             sprintf(print_buffer, "%2d (%2d)", fps, frames_drawn);
-            print_string(print_buffer, 0xFFFF, 0x000, 0, 0);
+            print_string(print_buffer, 0xFFFF, 0x000, 0, 20);
           }
           if(!synchronize_flag)
             print_string("-FF-", 0xFFFF, 0x000, 216, 0);
@@ -661,7 +626,7 @@ u32 update_gba()
           if(update_backup_flag)
             update_backup();
 
-          process_cheats();
+          //process_cheats();
 
           event_cycles++;
           if(event_cycles == event_cycles_trigger)
@@ -691,7 +656,6 @@ u32 update_gba()
       }
       io_registers[REG_DISPSTAT] = dispstat;
     }
-
     if(irq_raised)
       raise_interrupt(irq_raised);
 

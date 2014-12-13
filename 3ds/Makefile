@@ -28,11 +28,11 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		      :=	$(notdir $(CURDIR))
 BUILD		        :=	build
-SOURCES		      :=	.. ../arm
+SOURCES		      := .. ../arm .
 DATA		        :=	data
 INCLUDES	      :=	include
-APP_TITLE       :=  3DS Pong
-APP_DESCRIPTION :=  Pong for 3DS
+APP_TITLE       :=  CitrAGB (gpsp)
+APP_DESCRIPTION :=  3DS GBA Emulator
 APP_AUTHOR      :=  Shiny Quagsire
 ICON            :=  logo.png
 
@@ -45,7 +45,7 @@ CFLAGS	:=	-g -Wall -O3 -mword-relocations \
 			-fomit-frame-pointer -ffast-math \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DARM_ARCH -w
+CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DARM_ARCH -DRENDER_COLOR16_NORMAL -w
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11 -w
 

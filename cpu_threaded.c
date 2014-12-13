@@ -23,10 +23,10 @@
 
 #include "common.h"
 
-u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
+u8 rom_translation_cache[1];
 u8 *rom_translation_ptr = rom_translation_cache;
 
-u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
+u8 ram_translation_cache[1];
 u8 *ram_translation_ptr = ram_translation_cache;
 u32 iwram_code_min = 0xFFFFFFFF;
 u32 iwram_code_max = 0xFFFFFFFF;

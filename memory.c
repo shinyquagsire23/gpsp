@@ -64,7 +64,7 @@ u8 ewram[1024 * 256 * 2];
 u8 iwram[1024 * 32 * 2];
 u8 vram[1024 * 96 * 2];
 
-u8 bios_rom[1024 * 32];
+u8 *bios_rom;
 u32 bios_read_protect;
 
 // Up to 128kb, store SRAM, flash ROM, or EEPROM here.
@@ -2117,42 +2117,15 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
 
 s32 load_gamepak_raw(char *name)
 {
-  file_open(gamepak_file, name, read);
+  char fileName[256];
+  u64 size = -1;
 
-  if(file_check_valid(gamepak_file))
-  {
-    u32 file_size = file_length(name, gamepak_file);
+  sprintf(fileName, "/%s", name);
 
-    // First, close the last one if it was open, we won't
-    // be needing it anymore.
-    if(file_check_valid(gamepak_file_large))
-      file_close(gamepak_file_large);
-
-    // If it's a big file size keep it, don't close it, we'll
-    // probably want to load from it more later.
-    if(file_size <= gamepak_ram_buffer_size)
-    {
-      file_read(gamepak_file, gamepak_rom, file_size);
-
-      file_close(gamepak_file);
-
-#ifdef PSP_BUILD
-      gamepak_file_large = -1;
-#else
-      gamepak_file_large = NULL;
-#endif
-    }
-    else
-    {
-      // Read in just enough for the header
-      file_read(gamepak_file, gamepak_rom, 0x100);
-      gamepak_file_large = gamepak_file;
-    }
-
-    return file_size;
-  }
-
-  return -1;
+  gamepak_rom = utilLoad(fileName, &size);
+  if(size == -1)
+	return -1;
+  return (s32)(size & 0x7FFFFFFF);
 }
 
 char gamepak_title[13];
@@ -2216,19 +2189,56 @@ u32 load_gamepak(char *name)
 
 s32 load_bios(char *name)
 {
-  file_open(bios_file, name, read);
+  u64 size = 0;
+  bios_rom = utilLoad(name, &size);
 
-  if(file_check_valid(bios_file))
-  {
-    file_read(bios_file, bios_rom, 0x4000);
+  if(size == 0)
+	return -1;
+  return 0;
+}
 
-    // This is a hack to get Zelda working, because emulating
-    // the proper memory read behavior here is much too expensive.
-    file_close(bios_file);
-    return 0;
-  }
+u8 *utilLoad(char *file, u64* size)
+{
+	Handle fileHandle;
+	FS_path filePath;
+	filePath.type = PATH_CHAR;
+	filePath.size = strlen(file) + 1;
+	filePath.data = (u8*)file;
+	u8 *buffer;
 
-  return -1;
+	Result ret = FSUSER_OpenFile(NULL, &fileHandle, sdmcArchive, filePath, FS_OPEN_READ, FS_ATTRIBUTE_NONE);
+	if(!ret)
+	{
+		u32 bytesRead;
+		ret = FSFILE_GetSize(fileHandle, size);
+		if(ret)
+			return;	
+
+		buffer = linearAlloc(*size);
+		if(!buffer)
+			return;
+
+		ret = FSFILE_Read(fileHandle, &bytesRead, 0x0, buffer, *size);
+		if(ret || *size != bytesRead)
+			return;
+
+		ret = FSFILE_Close(fileHandle);
+
+		// Copy all the data we need to the DCPU memory 
+		// (only 0x10000 words worth, the rest of the file is ignored)
+		//memcpy(&DCPU_Mem[0], &fileBuffer[0], 0x10000*2);
+	}
+	return buffer;
+}
+
+static int utilGetSize(int size)
+{
+	int res = 1;
+
+	while(res < size)
+		res <<= 1;
+
+	return res;
 }
 
 // DMA memory regions can be one of the following:
@@ -2988,25 +2998,25 @@ void init_gamepak_buffer()
   gamepak_rom = NULL;
 
   gamepak_ram_buffer_size = 32 * 1024 * 1024;
-  gamepak_rom = malloc(gamepak_ram_buffer_size);
+  gamepak_rom = linearAlloc(gamepak_ram_buffer_size);
 
   if(gamepak_rom == NULL)
   {
     // Try 16MB, for PSP, then lower in 2MB increments
     gamepak_ram_buffer_size = 16 * 1024 * 1024;
-    gamepak_rom = malloc(gamepak_ram_buffer_size);
+    gamepak_rom = linearAlloc(gamepak_ram_buffer_size);
 
     while(gamepak_rom == NULL)
     {
       gamepak_ram_buffer_size -= (2 * 1024 * 1024);
-      gamepak_rom = malloc(gamepak_ram_buffer_size);
+      gamepak_rom = linearAlloc(gamepak_ram_buffer_size);
     }
   }
 
   // Here's assuming we'll have enough memory left over for this,
   // and that the above succeeded (if not we're in trouble all around)
   gamepak_ram_pages = gamepak_ram_buffer_size / (32 * 1024);
-  gamepak_memory_map = malloc(sizeof(gamepak_swap_entry_type) *
+  gamepak_memory_map = linearAlloc(sizeof(gamepak_swap_entry_type) *
    gamepak_ram_pages);
 }
 

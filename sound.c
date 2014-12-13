@@ -462,6 +462,7 @@ void update_gbc_sound(u32 cpu_ticks)
       while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >
        (audio_buffer_size * 3 / 2))
       {
+	   break; //TODO: Fix this
         //SDL_CondWait(sound_cv, sound_mutex);
       }
 

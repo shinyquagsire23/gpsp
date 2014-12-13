@@ -18,104 +18,8 @@
  */
 
 #include "common.h"
-#define WANT_FONT_BITS
-#include "font.h"
+#include "3ds/draw.h"
 
-#ifdef PSP_BUILD
-
-#include <pspctrl.h>
-
-#include <pspkernel.h>
-#include <pspdebug.h>
-#include <pspdisplay.h>
-
-#include <pspgu.h>
-#include <psppower.h>
-#include <psprtc.h>
-
-static float *screen_vertex = (float *)0x441FC100;
-static u32 *ge_cmd = (u32 *)0x441FC000;
-static u16 *psp_gu_vram_base = (u16 *)(0x44000000);
-static u32 *ge_cmd_ptr = (u32 *)0x441FC000;
-static u32 gecbid;
-static u32 video_direct = 0;
-
-static u32 __attribute__((aligned(16))) display_list[32];
-
-#define GBA_SCREEN_WIDTH 240
-#define GBA_SCREEN_HEIGHT 160
-
-#define PSP_SCREEN_WIDTH 480
-#define PSP_SCREEN_HEIGHT 272
-#define PSP_LINE_SIZE 512
-
-#define PSP_ALL_BUTTON_MASK 0xFFFF
-
-#define GE_CMD_FBP    0x9C
-#define GE_CMD_FBW    0x9D
-#define GE_CMD_TBP0   0xA0
-#define GE_CMD_TBW0   0xA8
-#define GE_CMD_TSIZE0 0xB8
-#define GE_CMD_TFLUSH 0xCB
-#define GE_CMD_CLEAR  0xD3
-#define GE_CMD_VTYPE  0x12
-#define GE_CMD_BASE   0x10
-#define GE_CMD_VADDR  0x01
-#define GE_CMD_IADDR  0x02
-#define GE_CMD_PRIM   0x04
-#define GE_CMD_FINISH 0x0F
-#define GE_CMD_SIGNAL 0x0C
-#define GE_CMD_NOP    0x00
-
-#define GE_CMD(cmd, operand)                                                \
-  *ge_cmd_ptr = (((GE_CMD_##cmd) << 24) | (operand));                       \
-  ge_cmd_ptr++                                                              \
-
-static u16 *screen_texture = (u16 *)(0x4000000 + (512 * 272 * 2));
-static u16 *current_screen_texture = (u16 *)(0x4000000 + (512 * 272 * 2));
-static u16 *screen_pixels = (u16 *)(0x4000000 + (512 * 272 * 2));
-static u32 screen_pitch = 240;
-
-static void Ge_Finish_Callback(int id, void *arg)
-{
-}
-
-#define get_screen_pixels()                                                   \
-  screen_pixels                                                               \
-
-#define get_screen_pitch()                                                    \
-  screen_pitch                                                                \
-
-#elif defined(POLLUX_BUILD)
-
-static u16 rot_buffer[240*4];
-static u32 rot_lines_total = 4;
-static u32 rot_line_count = 0;
-#ifdef WIZ_BUILD
-static char rot_msg_buff[64];
-#endif
-
-static u32 screen_offset = 0;
-static u16 *screen_pixels = NULL;
-const u32 screen_pitch = 320;
-
-#define get_screen_pixels()                                                   \
-  screen_pixels                                                               \
-
-#define get_screen_pitch()                                                    \
-  screen_pitch                                                                \
-
-#elif defined(PND_BUILD) || defined(RPI_BUILD)
-
-static u16 *screen_pixels = NULL;
-
-#define get_screen_pixels()                                                   \
-  screen_pixels                                                               \
-
-#define get_screen_pitch()                                                    \
-  resolution_width                                                            \
-
-#elif defined(_3DS)
 const u32 video_scale = 1;
 #define screen_texture *(u16*)&gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL)[0]
 #define current_screen_texture *(u16*)&gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL)[0]
@@ -127,23 +31,10 @@ static u32 screen_pitch = 240*3;
 
 #define get_screen_pitch()                                                    \
   screen_pitch  
-                                                      \
-#else
 
-#ifdef GP2X_BUILD
-#include "SDL_gp2x.h"
-SDL_Surface *hw_screen;
-#endif
-SDL_Surface *screen;
-const u32 video_scale = 1;
-
-#define get_screen_pixels()                                                   \
-  ((u16 *)screen->pixels)                                                     \
-
-#define get_screen_pitch()                                                    \
-  (screen->pitch / 2)                                                         \
-
-#endif
+#define FONT_HEIGHT 10
+#define color16(red, green, blue)                                             \
+  ((red & 0x1F) << 11) | ((green & 0x1F) << 6) | ((blue & 0x1F) << 1)                                           \
 
 static void render_scanline_conditional_tile(u32 start, u32 end, u16 *scanline,
  u32 enable_flags, u32 dispcnt, u32 bldcnt, const tile_layer_render_struct
@@ -3270,7 +3161,7 @@ void update_scanline()
   u32 pitch = get_screen_pitch();
   u32 dispcnt = io_registers[REG_DISPCNT];
   u32 vcount = io_registers[REG_VCOUNT];
-  u16 *screen_offset = get_screen_pixels() + (vcount * pitch);
+  u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL) + (vcount * 240 * 2);
   u32 video_mode = dispcnt & 0x07;
 
   // If OAM has been modified since the last scanline has been updated then
@@ -3285,28 +3176,6 @@ void update_scanline()
 
   if(skip_next_frame)
     return;
-
-#ifdef WIZ_BUILD
-  if (screen_scale == unscaled_rot || screen_scale == scaled_aspect_rot)
-  {
-    if (rot_line_count == rot_lines_total)
-    {
-      rot_line_count = 0;
-      if (vcount - rot_lines_total < FONT_HEIGHT && rot_msg_buff[0])
-      {
-        print_string_ext(rot_msg_buff, 0xFFFF, 0x0000, 0, 0,
-          rot_buffer, 240, 0, vcount - rot_lines_total, rot_lines_total);
-        if (vcount >= FONT_HEIGHT)
-          rot_msg_buff[0] = 0;
-      }
-      if (screen_scale == unscaled_rot)
-        do_rotated_blit(gpsp_gp2x_screen, rot_buffer, vcount);
-      else
-        upscale_aspect_row(gpsp_gp2x_screen, rot_buffer, vcount/3);
-    }
-    screen_offset = &rot_buffer[rot_line_count++ * 240];
-  }
-#endif
 
   // If the screen is in in forced blank draw pure white.
   if(dispcnt & 0x80)
@@ -3341,611 +3210,43 @@ void update_scanline()
   affine_reference_y[1] += (s16)io_registers[REG_BG3PD];
 }
 
-#ifdef PSP_BUILD
-
-u32 screen_flip = 0;
-
-void flip_screen()
-{
-  if(video_direct == 0)
-  {
-    u32 *old_ge_cmd_ptr = ge_cmd_ptr;
-    sceKernelDcacheWritebackAll();
-
-    // Render the current screen
-    ge_cmd_ptr = ge_cmd + 2;
-    GE_CMD(TBP0, ((u32)screen_pixels & 0x00FFFFFF));
-    GE_CMD(TBW0, (((u32)screen_pixels & 0xFF000000) >> 8) |
-     GBA_SCREEN_WIDTH);
-    ge_cmd_ptr = old_ge_cmd_ptr;
-
-    sceGeListEnQueue(ge_cmd, ge_cmd_ptr, gecbid, NULL);
-
-    // Flip to the next screen
-    screen_flip ^= 1;
-
-    if(screen_flip)
-      screen_pixels = screen_texture + (240 * 160 * 2);
-    else
-      screen_pixels = screen_texture;
-  }
-}
-
-#elif defined(POLLUX_BUILD)
-
-void flip_screen()
-{
-  if((resolution_width == small_resolution_width) &&
-   (resolution_height == small_resolution_height))
-  {
-    switch(screen_scale)
-    {
-      case unscaled:
-        break;
-      case scaled_aspect:
-        upscale_aspect(gpsp_gp2x_screen, screen_pixels);
-        break;
-      case unscaled_rot:
-        do_rotated_blit(gpsp_gp2x_screen, rot_buffer, 160);
-        rot_line_count = 0;
-        goto no_clean;
-      case scaled_aspect_rot:
-        rot_line_count = 0;
-        goto no_clean;
-    }
-  }
-  warm_cache_op_all(WOP_D_CLEAN);
-
-no_clean:
-  pollux_video_flip();
-  screen_pixels = (u16 *)gpsp_gp2x_screen + screen_offset;
-}
-
-#elif defined(PND_BUILD) || defined(RPI_BUILD)
-
-void flip_screen()
-{
-  screen_pixels = fb_flip_screen();
-}
-
-#else
-
-#define integer_scale_copy_2()                                                \
-  current_scanline_ptr[x2] = current_pixel;                                   \
-  current_scanline_ptr[x2 - 1] = current_pixel;                               \
-  x2 -= 2                                                                     \
-
-#define integer_scale_copy_3()                                                \
-  current_scanline_ptr[x2] = current_pixel;                                   \
-  current_scanline_ptr[x2 - 1] = current_pixel;                               \
-  current_scanline_ptr[x2 - 2] = current_pixel;                               \
-  x2 -= 3                                                                     \
-
-#define integer_scale_copy_4()                                                \
-  current_scanline_ptr[x2] = current_pixel;                                   \
-  current_scanline_ptr[x2 - 1] = current_pixel;                               \
-  current_scanline_ptr[x2 - 2] = current_pixel;                               \
-  current_scanline_ptr[x2 - 3] = current_pixel;                               \
-  x2 -= 4                                                                     \
-
-#define integer_scale_horizontal(scale_factor)                                \
-  for(y = 0; y < 160; y++)                                                    \
-  {                                                                           \
-    for(x = 239, x2 = (240 * video_scale) - 1; x >= 0; x--)                   \
-    {                                                                         \
-      current_pixel = current_scanline_ptr[x];                                \
-      integer_scale_copy_##scale_factor();                                    \
-      current_scanline_ptr[x2] = current_scanline_ptr[x];                     \
-      current_scanline_ptr[x2 - 1] = current_scanline_ptr[x];                 \
-      current_scanline_ptr[x2 - 2] = current_scanline_ptr[x];                 \
-    }                                                                         \
-    current_scanline_ptr += pitch;                                            \
-  }                                                                           \
-
-void flip_screen()
-{
-  if((video_scale != 1) && (current_scale != unscaled))
-  {
-    s32 x, y;
-    s32 x2, y2;
-    u16 *screen_ptr = get_screen_pixels();
-    u16 *current_scanline_ptr = screen_ptr;
-    u32 pitch = get_screen_pitch();
-    u16 current_pixel;
-    u32 i;
-
-    switch(video_scale)
-    {
-      case 2:
-        integer_scale_horizontal(2);
-        break;
-
-      case 3:
-        integer_scale_horizontal(3);
-        break;
-
-      default:
-      case 4:
-        integer_scale_horizontal(4);
-        break;
-
-    }
-
-    for(y = 159, y2 = (160 * video_scale) - 1; y >= 0; y--)
-    {
-      for(i = 0; i < video_scale; i++)
-      {
-        memcpy(screen_ptr + (y2 * pitch),
-         screen_ptr + (y * pitch), 480 * video_scale);
-        y2--;
-      }
-    }
-  }
-#ifdef GP2X_BUILD
-  {
-    if((resolution_width == small_resolution_width) &&
-     (resolution_height == small_resolution_height))
-    {
-      switch (screen_scale)
-      {
-        case unscaled:
-        {
-          SDL_Rect srect = {0, 0, 240, 160};
-          SDL_Rect drect = {40, 40, 240, 160};
-          warm_cache_op_all(WOP_D_CLEAN);
-          SDL_BlitSurface(screen, &srect, hw_screen, &drect);
-          return;
-        }
-        case scaled_aspect:
-        {
-          SDL_Rect drect = {0, 10, 0, 0};
-          warm_cache_op_all(WOP_D_CLEAN);
-          SDL_BlitSurface(screen, NULL, hw_screen, &drect);
-          return;
-        }
-        case scaled_aspect_sw:
-        {
-          upscale_aspect(hw_screen->pixels, get_screen_pixels());
-          return;
-        }
-        case fullscreen:
-          break;
-      }
-    }
-    warm_cache_op_all(WOP_D_CLEAN);
-    SDL_BlitSurface(screen, NULL, hw_screen, NULL);
-  }
-#elif defined(_3DS)
-	//TODO: 3DS
-#else
-  SDL_Flip(screen);
-#endif
-}
-
-#endif
-
-u32 frame_to_render;
-
 void update_screen()
 {
-  if(!skip_next_frame)
-    flip_screen();
+	screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
+	screenTopRight = gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, NULL, NULL);
+	screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
+	//clearScreen(screenBottom, GFX_BOTTOM,16,32,80);
+	//clearScreen(screenTopLeft, GFX_TOP,16,32,80); 
+	char pcBuff[256];
+	sprintf(pcBuff, "PC: %08x", reg[REG_PC]);
+	print_string(pcBuff, 0xFFFF, 0x0, 0, 0);
+	gfxFlushBuffers();
+	gfxSwapBuffers();	
+//if(!skip_next_frame)
+    //flip_screen();
 }
-
-#ifdef PSP_BUILD
-
-void init_video()
-{
-  sceDisplaySetMode(0, PSP_SCREEN_WIDTH, PSP_SCREEN_HEIGHT);
-
-  sceDisplayWaitVblankStart();
-  sceDisplaySetFrameBuf((void*)psp_gu_vram_base, PSP_LINE_SIZE,
-   PSP_DISPLAY_PIXEL_FORMAT_565, PSP_DISPLAY_SETBUF_NEXTFRAME);
-
-  sceGuInit();
-
-  sceGuStart(GU_DIRECT, display_list);
-  sceGuDrawBuffer(GU_PSM_5650, (void*)0, PSP_LINE_SIZE);
-  sceGuDispBuffer(PSP_SCREEN_WIDTH, PSP_SCREEN_HEIGHT,
-   (void*)0, PSP_LINE_SIZE);
-  sceGuClear(GU_COLOR_BUFFER_BIT);
-
-  sceGuOffset(2048 - (PSP_SCREEN_WIDTH / 2), 2048 - (PSP_SCREEN_HEIGHT / 2));
-  sceGuViewport(2048, 2048, PSP_SCREEN_WIDTH, PSP_SCREEN_HEIGHT);
-
-  sceGuScissor(0, 0, PSP_SCREEN_WIDTH + 1, PSP_SCREEN_HEIGHT + 1);
-  sceGuEnable(GU_SCISSOR_TEST);
-  sceGuTexMode(GU_PSM_5650, 0, 0, GU_FALSE);
-  sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-  sceGuTexFilter(GU_LINEAR, GU_LINEAR);
-  sceGuEnable(GU_TEXTURE_2D);
-
-  sceGuFrontFace(GU_CW);
-  sceGuDisable(GU_BLEND);
-
-  sceGuFinish();
-  sceGuSync(0, 0);
-
-  sceDisplayWaitVblankStart();
-  sceGuDisplay(GU_TRUE);
-
-  PspGeCallbackData gecb;
-  gecb.signal_func = NULL;
-  gecb.signal_arg = NULL;
-  gecb.finish_func = Ge_Finish_Callback;
-  gecb.finish_arg = NULL;
-  gecbid = sceGeSetCallback(&gecb);
-
-  screen_vertex[0] = 0 + 0.5;
-  screen_vertex[1] = 0 + 0.5;
-  screen_vertex[2] = 0 + 0.5;
-  screen_vertex[3] = 0 + 0.5;
-  screen_vertex[4] = 0;
-  screen_vertex[5] = GBA_SCREEN_WIDTH - 0.5;
-  screen_vertex[6] = GBA_SCREEN_HEIGHT - 0.5;
-  screen_vertex[7] = PSP_SCREEN_WIDTH - 0.5;
-  screen_vertex[8] = PSP_SCREEN_HEIGHT - 0.5;
-  screen_vertex[9] = 0;
-
-  // Set framebuffer to PSP VRAM
-  GE_CMD(FBP, ((u32)psp_gu_vram_base & 0x00FFFFFF));
-  GE_CMD(FBW, (((u32)psp_gu_vram_base & 0xFF000000) >> 8) | PSP_LINE_SIZE);
-  // Set texture 0 to the screen texture
-  GE_CMD(TBP0, ((u32)screen_texture & 0x00FFFFFF));
-  GE_CMD(TBW0, (((u32)screen_texture & 0xFF000000) >> 8) | GBA_SCREEN_WIDTH);
-  // Set the texture size to 256 by 256 (2^8 by 2^8)
-  GE_CMD(TSIZE0, (8 << 8) | 8);
-  // Flush the texture cache
-  GE_CMD(TFLUSH, 0);
-  // Use 2D coordinates, no indeces, no weights, 32bit float positions,
-  // 32bit float texture coordinates
-  GE_CMD(VTYPE, (1 << 23) | (0 << 11) | (0 << 9) |
-   (3 << 7) | (0 << 5) | (0 << 2) | 3);
-  // Set the base of the index list pointer to 0
-  GE_CMD(BASE, 0);
-  // Set the rest of index list pointer to 0 (not being used)
-  GE_CMD(IADDR, 0);
-  // Set the base of the screen vertex list pointer
-  GE_CMD(BASE, ((u32)screen_vertex & 0xFF000000) >> 8);
-  // Set the rest of the screen vertex list pointer
-  GE_CMD(VADDR, ((u32)screen_vertex & 0x00FFFFFF));
-  // Primitive kick: render sprite (primitive 6), 2 vertices
-  GE_CMD(PRIM, (6 << 16) | 2);
-  // Done with commands
-  GE_CMD(FINISH, 0);
-  // Raise signal interrupt
-  GE_CMD(SIGNAL, 0);
-  GE_CMD(NOP, 0);
-  GE_CMD(NOP, 0);
-}
-
-#elif defined(WIZ_BUILD) || defined(PND_BUILD) || defined (RPI_BUILD)  || defined (_3DS)
-
-void init_video()
-{
-}
-
-#else
-
-void init_video()
-{
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_NOPARACHUTE);
-
-#ifdef GP2X_BUILD
-  SDL_GP2X_AllowGfxMemory(NULL, 0);
-
-  hw_screen = SDL_SetVideoMode(320 * video_scale, 240 * video_scale,
-   16, SDL_HWSURFACE);
-
-  screen = SDL_CreateRGBSurface(SDL_HWSURFACE, 240 * video_scale,
-   160 * video_scale, 16, 0xFFFF, 0xFFFF, 0xFFFF, 0);
-
-  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
-#else
-  screen = SDL_SetVideoMode(240 * video_scale, 160 * video_scale, 16, 0);
-#endif
-  SDL_ShowCursor(0);
-}
-
-#endif
+void init_video(){};
 
 video_scale_type screen_scale = scaled_aspect;
 video_scale_type current_scale = scaled_aspect;
 video_filter_type screen_filter = filter_bilinear;
 video_filter_type2 screen_filter2 = filter2_none;
 
+void video_resolution_large(){};
+void video_resolution_small(){};
 
-#ifdef PSP_BUILD
-
-void video_resolution_large()
+void print_string(const char *str, u16 fg_color, u16 bg_color, u32 x, u32 y)
 {
-  if(video_direct != 1)
-  {
-    video_direct = 1;
-    screen_pixels = psp_gu_vram_base;
-    screen_pitch = 512;
-    sceGuStart(GU_DIRECT, display_list);
-    sceGuDispBuffer(PSP_SCREEN_WIDTH, PSP_SCREEN_HEIGHT,
-     (void*)0, PSP_LINE_SIZE);
-    sceGuFinish();
-  }
+  print_string_ext(str, fg_color, bg_color, x, y, 0,
+   0, 0, 0, FONT_HEIGHT);
 }
 
-void set_gba_resolution(video_scale_type scale)
+void print_string_pad(const char *str, u16 fg_color, u16 bg_color, u32 x, u32 y, u32 pad){};
+void print_string_ext(const char *str, u16 fg_color, u16 bg_color, u32 x, u32 y, void *_dest_ptr, u32 pitch, u32 pad, u32 h_offset, u32 height)
 {
-  u32 filter_linear = 0;
-  screen_scale = scale;
-  switch(scale)
-  {
-    case unscaled:
-      screen_vertex[2] = 120 + 0.5;
-      screen_vertex[3] = 56 + 0.5;
-      screen_vertex[7] = GBA_SCREEN_WIDTH + 120 - 0.5;
-      screen_vertex[8] = GBA_SCREEN_HEIGHT + 56 - 0.5;
-      break;
-
-    case scaled_aspect:
-      screen_vertex[2] = 36 + 0.5;
-      screen_vertex[3] = 0 + 0.5;
-      screen_vertex[7] = 408 + 36 - 0.5;
-      screen_vertex[8] = PSP_SCREEN_HEIGHT - 0.5;
-      break;
-
-    case fullscreen:
-      screen_vertex[2] = 0;
-      screen_vertex[3] = 0;
-      screen_vertex[7] = PSP_SCREEN_WIDTH;
-      screen_vertex[8] = PSP_SCREEN_HEIGHT;
-      break;
-  }
-
-  sceGuStart(GU_DIRECT, display_list);
-  if(screen_filter == filter_bilinear)
-    sceGuTexFilter(GU_LINEAR, GU_LINEAR);
-  else
-    sceGuTexFilter(GU_NEAREST, GU_NEAREST);
-
-  sceGuFinish();
-  sceGuSync(0, 0);
-
-  clear_screen(0x0000);
+	gfxDrawText(GFX_BOTTOM, GFX_LEFT, bg_color, fg_color, &fontDefault, str, BOTTOM_HEIGHT - y - FONT_HEIGHT, x);
 }
-
-void video_resolution_small()
-{
-  if(video_direct != 0)
-  {
-    set_gba_resolution(screen_scale);
-    video_direct = 0;
-    screen_pixels = screen_texture;
-    screen_flip = 0;
-    screen_pitch = 240;
-    sceGuStart(GU_DIRECT, display_list);
-    sceGuDispBuffer(PSP_SCREEN_WIDTH, PSP_SCREEN_HEIGHT,
-     (void*)0, PSP_LINE_SIZE);
-    sceGuFinish();
-  }
-}
-
-void clear_screen(u16 color)
-{
-  u32 i;
-  u16 *src_ptr = get_screen_pixels();
-
-  sceGuSync(0, 0);
-
-  for(i = 0; i < (512 * 272); i++, src_ptr++)
-  {
-    *src_ptr = color;
-  }
-
-  // I don't know why this doesn't work.
-/*  color = (((color & 0x1F) * 255 / 31) << 0) |
-   ((((color >> 5) & 0x3F) * 255 / 63) << 8) |
-   ((((color >> 11) & 0x1F) * 255 / 31) << 16) | (0xFF << 24);
-
-  sceGuStart(GU_DIRECT, display_list);
-  sceGuDrawBuffer(GU_PSM_5650, (void*)0, PSP_LINE_SIZE);
-  //sceGuDispBuffer(PSP_SCREEN_WIDTH, PSP_SCREEN_HEIGHT,
-  // (void*)0, PSP_LINE_SIZE);
-  sceGuClearColor(color);
-  sceGuClear(GU_COLOR_BUFFER_BIT);
-  sceGuFinish();
-  sceGuSync(0, 0); */
-}
-
-#elif defined(POLLUX_BUILD)
-
-void video_resolution_large()
-{
-  screen_offset = 0;
-  resolution_width = 320;
-  resolution_height = 240;
-
-  fb_use_buffers(1);
-  flip_screen();
-  clear_screen(0);
-  wiz_lcd_set_portrait(0);
-}
-
-void video_resolution_small()
-{
-  fb_use_buffers(4);
-
-  switch (screen_scale)
-  {
-    case unscaled:
-      screen_offset = 320*40 + 40;
-      wiz_lcd_set_portrait(0);
-      break;
-    case scaled_aspect:
-      screen_offset = 320*(80 - 14) + 80;
-      wiz_lcd_set_portrait(0);
-      break;
-    case unscaled_rot:
-      wiz_lcd_set_portrait(1);
-      rot_lines_total = 4;
-      rot_line_count = 0;
-      break;
-    case scaled_aspect_rot:
-      wiz_lcd_set_portrait(1);
-      rot_lines_total = 3;
-      rot_line_count = 0;
-      break;
-  }
-
-  flip_screen();
-  clear_screen(0);
-
-  resolution_width = 240;
-  resolution_height = 160;
-}
-
-void set_gba_resolution(video_scale_type scale)
-{
-  screen_scale = scale;
-}
-
-void clear_screen(u16 color)
-{
-  u32 col = ((u32)color << 16) | color;
-  u32 *p = gpsp_gp2x_screen;
-  int c = 320*240/2;
-  while (c-- > 0)
-    *p++ = col;
-}
-
-#elif defined(PND_BUILD) || defined(RPI_BUILD) || defined(_3DS)
-
-void video_resolution_large()
-{
-#if defined (RPI_BUILD)
-  resolution_width = 480;
-#elif defined (_3DS)
-  resolution_width = 400;
-#else
-  resolution_width = 400;
-#endif
-  resolution_height = 272;
-#ifndef _3DS
-  fb_set_mode(resolution_width, resolution_height, 1, 15, screen_filter, screen_filter2);
-  flip_screen();
-#endif
-  clear_screen(0);
-}
-
-void video_resolution_small()
-{
-  resolution_width = 240;
-  resolution_height = 160;
-#ifndef _3DS
-  fb_set_mode(resolution_width, resolution_height, 3, screen_scale, screen_filter, screen_filter2);
-  flip_screen();
-#endif
-  clear_screen(0);
-}
-
-void set_gba_resolution(video_scale_type scale)
-{
-  screen_scale = scale;
-}
-
-void clear_screen(u16 color)
-{
-  u32 col = ((u32)color << 16) | color;
-  u32 *p = (u32 *)get_screen_pixels();
-  int c = resolution_width * resolution_height / 2;
-  while (c-- > 0)
-    *p++ = col;
-}
-
-#else
-
-void video_resolution_large()
-{
-  current_scale = unscaled;
-
-#ifdef GP2X_BUILD
-  SDL_FreeSurface(screen);
-  SDL_GP2X_AllowGfxMemory(NULL, 0);
-    hw_screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE);
-  screen = SDL_CreateRGBSurface(SDL_HWSURFACE, 320, 240, 16, 0xFFFF,
-   0xFFFF, 0xFFFF, 0);
-  resolution_width = 320;
-    resolution_height = 240;
-  SDL_ShowCursor(0);
-
-  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
-#else
-  screen = SDL_SetVideoMode(480, 272, 16, 0);
-  resolution_width = 480;
-  resolution_height = 272;
-#endif
-}
-
-void video_resolution_small()
-{
-  current_scale = screen_scale;
-
-#ifdef GP2X_BUILD
-  int w, h;
-  SDL_FreeSurface(screen);
-  SDL_GP2X_AllowGfxMemory(NULL, 0);
-
-  w = 320; h = 240;
-  if (screen_scale == scaled_aspect || screen_scale == fullscreen)
-  {
-    w = small_resolution_width * video_scale;
-    h = small_resolution_height * video_scale;
-  }
-  if (screen_scale == scaled_aspect) h += 20;
-  hw_screen = SDL_SetVideoMode(w, h, 16, SDL_HWSURFACE);
-
-  w = small_resolution_width * video_scale;
-  if (screen_scale == scaled_aspect_sw)
-    w = 320;
-  screen = SDL_CreateRGBSurface(SDL_HWSURFACE,
-   w, small_resolution_height * video_scale,
-   16, 0xFFFF, 0xFFFF, 0xFFFF, 0);
-
-  SDL_ShowCursor(0);
-
-  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
-#else
-  screen = SDL_SetVideoMode(small_resolution_width * video_scale,
-   small_resolution_height * video_scale, 16, 0);
-#endif
-  resolution_width = small_resolution_width;
-  resolution_height = small_resolution_height;
-}
-
-void set_gba_resolution(video_scale_type scale)
-{
-  if(screen_scale != scale)
-  {
-    screen_scale = scale;
-    small_resolution_width = 240 * video_scale;
-    small_resolution_height = 160 * video_scale;
-  }
-}
-
-void clear_screen(u16 color)
-{
-  u16 *dest_ptr = get_screen_pixels();
-  u32 line_skip = get_screen_pitch() - screen->w;
-  u32 x, y;
-
-  for(y = 0; y < screen->h; y++)
-  {
-    for(x = 0; x < screen->w; x++, dest_ptr++)
-    {
-      *dest_ptr = color;
-    }
-    dest_ptr += line_skip;
-  }
-}
-
-#endif
+void clear_screen(u16 color){};
 
 u16 *copy_screen()
 {
@@ -3974,201 +3275,79 @@ void blit_to_screen(u16 *src, u32 w, u32 h, u32 dest_x, u32 dest_y)
   }
 }
 
-void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y, void *_dest_ptr, u32 pitch, u32 pad, u32 h_offset, u32 height)
-{
-  u16 *dest_ptr = (u16 *)_dest_ptr + (y * pitch) + x;
-  u8 current_char = str[0];
-  u32 current_row;
-  u32 glyph_offset;
-  u32 i = 0, i2, i3, h;
-  u32 str_index = 1;
-  u32 current_x = x;
+void flip_screen(){};
+void video_write_mem_savestate(file_tag_type savestate_file){};
+void video_read_savestate(file_tag_type savestate_file){};
 
-  if(y + height > resolution_height)
-      return;
-
-  while(current_char)
-  {
-    if(current_char == '\n')
-    {
-      y += FONT_HEIGHT;
-      current_x = x;
-      dest_ptr = get_screen_pixels() + (y * pitch) + x;
-    }
-    else
-    {
-      glyph_offset = _font_offset[current_char];
-      current_x += FONT_WIDTH;
-      glyph_offset += h_offset;
-      for(i2 = h_offset, h = 0; i2 < FONT_HEIGHT && h < height; i2++, h++, glyph_offset++)
-      {
-        current_row = _font_bits[glyph_offset];
-        for(i3 = 0; i3 < FONT_WIDTH; i3++)
-        {
-          if((current_row >> (15 - i3)) & 0x01)
-            *dest_ptr = fg_color;
-          else
-            *dest_ptr = bg_color;
-          dest_ptr++;
-        }
-        dest_ptr += (pitch - FONT_WIDTH);
-      }
-      dest_ptr = dest_ptr - (pitch * h) + FONT_WIDTH;
-    }
-
-    i++;
-
-    current_char = str[str_index];
-
-    if((i < pad) && (current_char == 0))
-    {
-      current_char = ' ';
-    }
-    else
-    {
-      str_index++;
-    }
-
-    if(current_x + FONT_WIDTH > resolution_width /* EDIT */)
-    {
-      while (current_char && current_char != '\n')
-      {
-        current_char = str[str_index++];
-      }
-    }
-  }
-}
-
-void print_string(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y)
-{
-#ifdef WIZ_BUILD
-  if ((screen_scale == unscaled_rot || screen_scale == scaled_aspect_rot) &&
-   (resolution_width == small_resolution_width) &&
-   (resolution_height == small_resolution_height))
-  {
-    snprintf(rot_msg_buff, sizeof(rot_msg_buff), "%s", str);
-    return;
-  }
-#endif
-  print_string_ext(str, fg_color, bg_color, x, y, get_screen_pixels(),
-   get_screen_pitch(), 0, 0, FONT_HEIGHT);
-}
-
-void print_string_pad(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y, u32 pad)
-{
-  print_string_ext(str, fg_color, bg_color, x, y, get_screen_pixels(),
-   get_screen_pitch(), pad, 0, FONT_HEIGHT);
-}
-
-u32 debug_cursor_x = 0;
-u32 debug_cursor_y = 0;
-
-#ifdef STDIO_DEBUG
+char *debugBuffer;
 
 void debug_screen_clear()
 {
+	free(debugBuffer);
+	debugBuffer = malloc(1);
+	*debugBuffer = "";
 }
-
 void debug_screen_start()
 {
+	screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
+	screenTopRight = gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, NULL, NULL);
+	screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
+	clearScreen(screenBottom, GFX_BOTTOM,color16(2, 8, 10));
+	clearScreen(screenTopLeft, GFX_TOP,color16(2, 8, 10)); 
 }
-
 void debug_screen_end()
 {
-}
 
-void debug_screen_update()
-{
 }
 
 void debug_screen_printf(const char *format, ...)
 {
-  va_list ap;
+	char str_buffer[512];
+ 	u32 str_buffer_length;
+  	va_list ap;
 
-  va_start(ap, format);
-  vprintf(format, ap);
-  va_end(ap);
+  	va_start(ap, format);
+  	str_buffer_length = vsnprintf(str_buffer, 512, format, ap);
+  	va_end(ap);
+
+	char *str_buffer_2 = malloc(strlen(debugBuffer)+strlen(str_buffer)+1);
+     strcpy(str_buffer_2, debugBuffer);
+     strcat(str_buffer_2, str_buffer);
+	free(debugBuffer);
+	debugBuffer = str_buffer_2;
 }
-
-void debug_screen_newline(u32 count)
-{
-  printf("\n");
-}
-
-
-#else
-
-void debug_screen_clear()
-{
-  debug_cursor_x = 0;
-  debug_cursor_y = 0;
-  clear_screen(0x0000);
-}
-
-void debug_screen_start()
-{
-  video_resolution_large();
-  debug_screen_clear();
-}
-
-void debug_screen_end()
-{
-  video_resolution_small();
-}
-
-void debug_screen_update()
-{
-  flip_screen();
-}
-
-void debug_screen_printf(const char *format, ...)
-{
-  char str_buffer[512];
-  u32 str_buffer_length;
-  va_list ap;
-
-  va_start(ap, format);
-  str_buffer_length = vsnprintf(str_buffer, 512, format, ap);
-  va_end(ap);
-
-  printf("printing debug string %s at %d %d\n", str_buffer,
-   debug_cursor_x, debug_cursor_y);
-
-  print_string(str_buffer, 0xFFFF, 0x0000, debug_cursor_x, debug_cursor_y);
-  debug_cursor_x += FONT_WIDTH * str_buffer_length;
-}
-
-void debug_screen_newline(u32 count)
-{
-  debug_cursor_x = 0;
-  debug_cursor_y += FONT_HEIGHT * count;
-}
-
-#endif
 
 void debug_screen_printl(const char *format, ...)
 {
-  va_list ap;
+	char str_buffer[512];
+ 	u32 str_buffer_length;
+  	va_list ap;
 
-  va_start(ap, format);
-  debug_screen_printf(format, ap);
-  debug_screen_newline(1);
-//  debug_screen_printf("\n");
-  va_end(ap);
+  	va_start(ap, format);
+  	str_buffer_length = vsnprintf(str_buffer, 512, format, ap);
+  	va_end(ap);
+
+	char *str_buffer_2 = malloc(strlen(debugBuffer)+strlen(str_buffer)+2);
+     strcpy(str_buffer_2, debugBuffer);
+	strcat(str_buffer_2, str_buffer);
+     strcat(str_buffer_2, "\n");
+	free(debugBuffer);
+	debugBuffer = str_buffer_2;
+}
+void debug_screen_newline(u32 count)
+{
+	char *str_buffer_2 = malloc(strlen(debugBuffer)+1);
+     strcpy(str_buffer_2, debugBuffer);
+     strcat(str_buffer_2, "\n");
+	free(debugBuffer);
+	debugBuffer = str_buffer_2;
+}
+void debug_screen_update()
+{
+	gfxDrawText(GFX_BOTTOM, GFX_LEFT, &fontDefault, color16(2, 8, 10), 0xFFFF, debugBuffer, BOTTOM_HEIGHT-10, 0);
+	gfxFlushBuffers();
+	gfxSwapBuffers();
 }
 
-
-#define video_savestate_builder(type)                                         \
-void video_##type##_savestate(file_tag_type savestate_file)                   \
-{                                                                             \
-  file_##type##_array(savestate_file, affine_reference_x);                    \
-  file_##type##_array(savestate_file, affine_reference_y);                    \
-}                                                                             \
-
-video_savestate_builder(read);
-video_savestate_builder(write_mem);
-
+void set_gba_resolution(video_scale_type scale){};
 

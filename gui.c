@@ -41,7 +41,10 @@
 #define FILE_LIST_ROWS 20
 #define FILE_LIST_POSITION 5
 #define DIR_LIST_POSITION 260
-
+#elif defined(_3DS)
+#define FILE_LIST_ROWS 25
+#define FILE_LIST_POSITION 5
+#define DIR_LIST_POSITION (320 * 3 / 4)
 #else
 
 #define FILE_LIST_ROWS 25
@@ -55,14 +58,14 @@
 #define COLOR_BG            color16(2, 8, 10)
 
 #define color16(red, green, blue)                                             \
-  (blue << 11) | (green << 5) | red                                           \
+  (blue << 10) | (green << 5) | red                                           \
 
 #else
 
-#define COLOR_BG            color16(0, 0, 0)
+#define COLOR_BG            color16(2, 8, 10)
 
 #define color16(red, green, blue)                                             \
-  (red << 11) | (green << 5) | blue                                           \
+  ((red & 0x1F) << 11) | ((green & 0x1F) << 5) | ((blue & 0x1F) << 1)                                           \
 
 #endif
 
@@ -171,8 +174,8 @@ s32 load_file(const char **wildcards, char *result)
 
     total_filenames_allocated = 32;
     total_dirnames_allocated = 32;
-    file_list = (char **)malloc(sizeof(char *) * 32);
-    dir_list = (char **)malloc(sizeof(char *) * 32);
+    file_list = (char **)linearAlloc(sizeof(char *) * 32);
+    dir_list = (char **)linearAlloc(sizeof(char *) * 32);
     memset(file_list, 0, sizeof(char *) * 32);
     memset(dir_list, 0, sizeof(char *) * 32);
 
@@ -182,27 +185,22 @@ s32 load_file(const char **wildcards, char *result)
     chosen_dir = 0;
 
     getcwd(current_dir_name, MAX_PATH);
-
-    current_dir = opendir(current_dir_name);
+    //current_dir = opendir(current_dir_name);
 
     do
     {
-      if(current_dir)
-        current_file = readdir(current_dir);
-      else
-        current_file = NULL;
+      current_file = fs_readdir();
 
       if(current_file)
       {
         file_name = current_file->d_name;
         file_name_length = strlen(file_name);
 
-        if((stat(file_name, &file_info) >= 0) &&
-         ((file_name[0] != '.') || (file_name[1] == '.')))
+        if(((file_name[0] != '.') || (file_name[1] == '.')))
         {
-          if(S_ISDIR(file_info.st_mode))
+          if(current_file->d_type & DT_DIR)
           {
-            dir_list[num_dirs] = malloc(file_name_length + 1);
+            dir_list[num_dirs] = linearAlloc(file_name_length + 1);
 
             sprintf(dir_list[num_dirs], "%s", file_name);
 
@@ -225,11 +223,10 @@ s32 load_file(const char **wildcards, char *result)
 
               for(i = 0; wildcards[i] != NULL; i++)
               {
-                if(!strcasecmp((file_name + ext_pos),
-                 wildcards[i]))
+                if(!strcasecmp((file_name + ext_pos), wildcards[i]))
                 {
                   file_list[num_files] =
-                   malloc(file_name_length + 1);
+                   linearAlloc(file_name_length + 1);
 
                   sprintf(file_list[num_files], "%s", file_name);
 
@@ -264,31 +261,22 @@ s32 load_file(const char **wildcards, char *result)
     qsort((void *)file_list, num_files, sizeof(char *), sort_function);
     qsort((void *)dir_list, num_dirs, sizeof(char *), sort_function);
 
-    closedir(current_dir);
+    //closedir(current_dir);
 
     current_dir_length = strlen(current_dir_name);
 
     if(current_dir_length > 80)
     {
 
-#ifdef GP2X_BUILD
-    snprintf(current_dir_short, 80,
-     "...%s", current_dir_name + current_dir_length - 77);
-#else
     memcpy(current_dir_short, "...", 3);
       memcpy(current_dir_short + 3,
        current_dir_name + current_dir_length - 77, 77);
       current_dir_short[80] = 0;
-#endif
     }
     else
     {
-#ifdef GP2X_BUILD
-      snprintf(current_dir_short, 80, "%s", current_dir_name);
-#else
       memcpy(current_dir_short, current_dir_name,
-       current_dir_length + 1);
-#endif
+      current_dir_length + 1);
     }
 
     repeat = 1;
@@ -296,11 +284,17 @@ s32 load_file(const char **wildcards, char *result)
     if(num_files == 0)
       current_column = 1;
 
-    clear_screen(COLOR_BG);
   {
+	 screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
+	 screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
+    clearScreen(screenBottom, GFX_BOTTOM,color16(2, 8, 10));
+  clearScreen(screenTopLeft, GFX_TOP,color16(2, 8, 10)); 
     while(repeat)
     {
-      flip_screen();
+	 gspWaitForVBlank();
+	 screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
+	 screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
+      //flip_screen();
 
       print_string(current_dir_short, COLOR_ACTIVE_ITEM, COLOR_BG, 0, 0);
 #if defined GP2X_BUILD
@@ -319,15 +313,22 @@ s32 load_file(const char **wildcards, char *result)
       {
         if(current_file_number < num_files)
         {
+		char fbuffer[256];
+		strncpy(fbuffer, file_list[current_file_number], 30);
+		fbuffer[30] = ' ';
+		fbuffer[31] = '.';
+		fbuffer[32] = '.';
+		fbuffer[33] = '.';
+		fbuffer[34] = 0;
           if((current_file_number == current_file_selection) &&
            (current_column == 0))
           {
-            print_string(file_list[current_file_number], COLOR_ACTIVE_ITEM,
+            print_string(fbuffer, COLOR_ACTIVE_ITEM,
              COLOR_BG, FILE_LIST_POSITION, ((i + 1) * 10));
           }
           else
           {
-            print_string(file_list[current_file_number], COLOR_INACTIVE_ITEM,
+            print_string(fbuffer, COLOR_INACTIVE_ITEM,
              COLOR_BG, FILE_LIST_POSITION, ((i + 1) * 10));
           }
         }
@@ -503,7 +504,7 @@ s32 load_file(const char **wildcards, char *result)
           if(current_column == 1)
           {
             repeat = 0;
-            chdir(dir_list[current_dir_selection]);
+            fs_chdir(dir_list[current_dir_selection]);
           }
           else
           {
@@ -522,7 +523,7 @@ s32 load_file(const char **wildcards, char *result)
             break;
 #endif
           repeat = 0;
-          chdir("..");
+          fs_chdir("..");
           break;
 
         case CURSOR_EXIT:
@@ -533,20 +534,22 @@ s32 load_file(const char **wildcards, char *result)
         default:
           break;
       }
+	gfxFlushBuffers();
+	gfxSwapBuffers();
     }
   }
 
     for(i = 0; i < num_files; i++)
     {
-      free(file_list[i]);
+      linearFree(file_list[i]);
     }
-    free(file_list);
+    linearFree(file_list);
 
     for(i = 0; i < num_dirs; i++)
     {
-      free(dir_list[i]);
+      linearFree(dir_list[i]);
     }
-    free(dir_list);
+    linearFree(dir_list);
   }
 
   clear_screen(COLOR_BG);

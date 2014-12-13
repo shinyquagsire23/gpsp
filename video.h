@@ -39,6 +39,8 @@ void flip_screen();
 void video_write_mem_savestate(file_tag_type savestate_file);
 void video_read_savestate(file_tag_type savestate_file);
 
+char *debugBuffer;
+
 void debug_screen_clear();
 void debug_screen_start();
 void debug_screen_end();

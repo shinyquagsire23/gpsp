@@ -178,6 +178,8 @@ u8 *memory_region(u32 address, u32 *memory_limit);
 u32 load_gamepak(char *name);
 u32 load_backup(char *name);
 s32 load_bios(char *name);
+u8 *utilLoad(char *file, u64* size);
+static int utilGetSize(int size);
 void update_backup();
 void update_backup_force();
 void init_memory();
@@ -207,7 +209,7 @@ extern u8 ewram[1024 * 256 * 2];
 extern u8 iwram[1024 * 32 * 2];
 extern u8 vram[1024 * 96 * 2];
 
-extern u8 bios_rom[1024 * 32];
+extern u8 *bios_rom;
 extern u32 bios_read_protect;
 
 extern u8 *memory_map_read[8 * 1024];
