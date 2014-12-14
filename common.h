@@ -137,7 +137,7 @@
 #endif
 
   #define convert_palette(value)                                              \
-    value = ((value & 0x1F) << 11) | ((value & 0x03E0) << 1) | (value >> 10)  \
+    value = ((value & 0x1F) << 11) | ((value & 0x03E0) << 1) | (value >> 9)  \
 
   #define stdio_file_open_read  "rb"
   #define stdio_file_open_write "wb"
