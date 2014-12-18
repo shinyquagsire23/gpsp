@@ -78,7 +78,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 
 
 #define advance_dest_ptr_base(delta)                                          \
-  dest_ptr += delta * 240                                                          \
+  dest_ptr += delta                                                          \
 
 #define advance_dest_ptr_transparent(delta)                                   \
   advance_dest_ptr_base(delta)                                                \
@@ -488,14 +488,14 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 // renderers.
 
 #define tile_4bpp_draw_eight_base_zero(value)                                 \
-  dest_ptr[0*240] = value;                                                        \
-  dest_ptr[1*240] = value;                                                        \
-  dest_ptr[2*240] = value;                                                        \
-  dest_ptr[3*240] = value;                                                        \
-  dest_ptr[4*240] = value;                                                        \
-  dest_ptr[5*240] = value;                                                        \
-  dest_ptr[6*240] = value;                                                        \
-  dest_ptr[7*240] = value                                                         \
+  dest_ptr[0] = value;                                                        \
+  dest_ptr[1] = value;                                                        \
+  dest_ptr[2] = value;                                                        \
+  dest_ptr[3] = value;                                                        \
+  dest_ptr[4] = value;                                                        \
+  dest_ptr[5] = value;                                                        \
+  dest_ptr[6] = value;                                                        \
+  dest_ptr[7] = value                                                         \
 
 
 // Draws eight background pixels for the alpha renderer, basically color zero
@@ -532,27 +532,27 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 // Draws eight 4bpp pixels.
 
 #define tile_4bpp_draw_eight_noflip(combine_op, alpha_op)                     \
-  tile_4bpp_draw_##combine_op(0*240, mask, 0, alpha_op);                          \
-  tile_4bpp_draw_##combine_op(1*240, shift_mask, 4, alpha_op);                    \
-  tile_4bpp_draw_##combine_op(2*240, shift_mask, 8, alpha_op);                    \
-  tile_4bpp_draw_##combine_op(3*240, shift_mask, 12, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(4*240, shift_mask, 16, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(5*240, shift_mask, 20, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(6*240, shift_mask, 24, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(7*240, shift, 28, alpha_op)                         \
+  tile_4bpp_draw_##combine_op(0, mask, 0, alpha_op);                          \
+  tile_4bpp_draw_##combine_op(1, shift_mask, 4, alpha_op);                    \
+  tile_4bpp_draw_##combine_op(2, shift_mask, 8, alpha_op);                    \
+  tile_4bpp_draw_##combine_op(3, shift_mask, 12, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(4, shift_mask, 16, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(5, shift_mask, 20, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(6, shift_mask, 24, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(7, shift, 28, alpha_op)                         \
 
 
 // Draws eight 4bpp pixels in reverse order (for hflip).
 
 #define tile_4bpp_draw_eight_flip(combine_op, alpha_op)                       \
-  tile_4bpp_draw_##combine_op(7*240, mask, 0, alpha_op);                          \
-  tile_4bpp_draw_##combine_op(6*240, shift_mask, 4, alpha_op);                    \
-  tile_4bpp_draw_##combine_op(5*240, shift_mask, 8, alpha_op);                    \
-  tile_4bpp_draw_##combine_op(4*240, shift_mask, 12, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(3*240, shift_mask, 16, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(2*240, shift_mask, 20, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(1*240, shift_mask, 24, alpha_op);                   \
-  tile_4bpp_draw_##combine_op(0*240, shift, 28, alpha_op)                         \
+  tile_4bpp_draw_##combine_op(7, mask, 0, alpha_op);                          \
+  tile_4bpp_draw_##combine_op(6, shift_mask, 4, alpha_op);                    \
+  tile_4bpp_draw_##combine_op(5, shift_mask, 8, alpha_op);                    \
+  tile_4bpp_draw_##combine_op(4, shift_mask, 12, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(3, shift_mask, 16, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(2, shift_mask, 20, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(1, shift_mask, 24, alpha_op);                   \
+  tile_4bpp_draw_##combine_op(0, shift, 28, alpha_op)                         \
 
 
 // Draws eight 4bpp pixels in base mode, checks if all are zero, if so draws
@@ -1588,7 +1588,7 @@ static const bitmap_layer_render_struct bitmap_mode_renderers[3] =
     pixel_run = end - obj_x;                                                  \
     if((s32)pixel_run > 0)                                                    \
     {                                                                         \
-      dest_ptr = scanline + (obj_x*240);                                            \
+      dest_ptr = scanline + (obj_x);                                            \
       tile_run = pixel_run / 8;                                               \
       multiple_tile_obj(combine_op, color_depth, alpha_op, flip_op);          \
       partial_tile_run = pixel_run % 8;                                       \
@@ -1600,7 +1600,7 @@ static const bitmap_layer_render_struct bitmap_mode_renderers[3] =
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    dest_ptr = scanline + (obj_x*240);                                              \
+    dest_ptr = scanline + (obj_x);                                              \
     tile_run = obj_width / 8;                                                 \
     multiple_tile_obj(combine_op, color_depth, alpha_op, flip_op);            \
   }                                                                           \
@@ -3161,7 +3161,7 @@ void update_scanline()
   u32 pitch = get_screen_pitch();
   u32 dispcnt = io_registers[REG_DISPCNT];
   u32 vcount = io_registers[REG_VCOUNT];
-  u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL) + ((160 - vcount)*2);
+  u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL) + (vcount*240*2);
   u32 video_mode = dispcnt & 0x07;
 
   // If OAM has been modified since the last scanline has been updated then
