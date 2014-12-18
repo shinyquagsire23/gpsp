@@ -287,8 +287,8 @@ void draw(void)
 	screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
 
 	/* Clear Screen */
-	clearScreen(screenBottom, GFX_BOTTOM,color16(2, 8, 10));
-	clearScreen(screenTopLeft, GFX_TOP,color16(2, 8, 10)); 
+	clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
+	clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
 	//clearScreen(screenTopRight, GFX_TOP);
 
 	/*char str[256];

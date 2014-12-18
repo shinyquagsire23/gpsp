@@ -3302,8 +3302,8 @@ void debug_screen_start()
 	screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
 	screenTopRight = gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, NULL, NULL);
 	screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
-	clearScreen(screenBottom, GFX_BOTTOM,color16(2, 8, 10));
-	clearScreen(screenTopLeft, GFX_TOP,color16(2, 8, 10)); 
+	clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
+	clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
 }
 void debug_screen_end()
 {
@@ -3354,7 +3354,7 @@ void debug_screen_newline(u32 count)
 }
 void debug_screen_update()
 {
-	gfxDrawText(GFX_BOTTOM, GFX_LEFT, &fontDefault, color16(2, 8, 10), 0xFFFF, debugBuffer, BOTTOM_HEIGHT-10, 0);
+	gfxDrawText(GFX_BOTTOM, GFX_LEFT, &fontDefault, color16(2, 4, 10), 0xFFFF, debugBuffer, BOTTOM_HEIGHT-10, 0);
 	gfxFlushBuffers();
 	gfxSwapBuffers();
 }

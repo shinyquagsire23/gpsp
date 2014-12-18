@@ -62,15 +62,15 @@
 
 #else
 
-#define COLOR_BG            color16(2, 8, 10)
+#define COLOR_BG            color16(2, 4, 10)
 
 #define color16(red, green, blue)                                             \
-  ((red & 0x1F) << 11) | ((green & 0x1F) << 5) | ((blue & 0x1F) << 1)                                           \
+  ((red & 0x1F) << 11) | ((green & 0x1F) << 6) | ((blue & 0x1F) << 1)                                           \
 
 #endif
 
 #define COLOR_ROM_INFO      color16(22, 36, 26)
-#define COLOR_ACTIVE_ITEM   color16(31, 63, 31)
+#define COLOR_ACTIVE_ITEM   color16(31, 31, 31)
 #define COLOR_INACTIVE_ITEM color16(13, 40, 18)
 #define COLOR_FRAMESKIP_BAR color16(15, 31, 31)
 #define COLOR_HELP_TEXT     color16(16, 40, 24)
@@ -287,8 +287,8 @@ s32 load_file(const char **wildcards, char *result)
   {
 	 screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
 	 screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
-    clearScreen(screenBottom, GFX_BOTTOM,color16(2, 8, 10));
-  clearScreen(screenTopLeft, GFX_TOP,color16(2, 8, 10)); 
+    clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
+  clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
     while(repeat)
     {
 	 gspWaitForVBlank();

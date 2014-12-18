@@ -51,12 +51,6 @@ void clearScreen(u16* screen,gfxScreen_t screenPos, u16 color)
 			drawPixel(i,j,color,screen);
 		}
 	}
-	drawPixel(0,0,0x1F,screen);
-	drawPixel(0,1,0x1F<<5,screen);
-	drawPixel(0,2,0x1F<<10,screen);
-	drawPixel(1,0,0x1F<<1,screen);
-	drawPixel(1,1,0x1F<<6,screen);
-	drawPixel(1,2,0x1F<<11,screen);
 }
 
 void drawPixel_(int x, int y, char r, char g, char b, u8* screen)
@@ -69,7 +63,7 @@ void drawPixel(int x, int y, u16 color, u16* screen)
 	int height=240;
 	
 	u32 v=((y)+x*height);
-	screen[v]=0x1214;
+	screen[v]=color;
 }
 
 
