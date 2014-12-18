@@ -179,6 +179,7 @@ u32 load_gamepak(char *name);
 u32 load_backup(char *name);
 s32 load_bios(char *name);
 u8 *utilLoad(char *file, u64* size);
+u8 *utilLoad_Size(char *file, u64* size, u32 forceSize);
 static int utilGetSize(int size);
 void update_backup();
 void update_backup_force();

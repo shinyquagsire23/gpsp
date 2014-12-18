@@ -2122,7 +2122,7 @@ s32 load_gamepak_raw(char *name)
 
   sprintf(fileName, "/%s", name);
 
-  gamepak_rom = utilLoad(fileName, &size);
+  gamepak_rom = utilLoad_Size(fileName, &size, 0x1000000);
   if(size == -1)
 	return -1;
   return (s32)(size & 0x7FFFFFFF);
@@ -2215,6 +2215,40 @@ u8 *utilLoad(char *file, u64* size)
 			return;	
 
 		buffer = linearAlloc(*size);
+		if(!buffer)
+			return;
+
+		ret = FSFILE_Read(fileHandle, &bytesRead, 0x0, buffer, *size);
+		if(ret || *size != bytesRead)
+			return;
+
+		ret = FSFILE_Close(fileHandle);
+
+		// Copy all the data we need to the DCPU memory 
+		// (only 0x10000 words worth, the rest of the file is ignored)
+		//memcpy(&DCPU_Mem[0], &fileBuffer[0], 0x10000*2);
+	}
+	return buffer;
+}
+
+u8 *utilLoad_Size(char *file, u64* size, u32 forceSize)
+{
+	Handle fileHandle;
+	FS_path filePath;
+	filePath.type = PATH_CHAR;
+	filePath.size = strlen(file) + 1;
+	filePath.data = (u8*)file;
+	u8 *buffer;
+
+	Result ret = FSUSER_OpenFile(NULL, &fileHandle, sdmcArchive, filePath, FS_OPEN_READ, FS_ATTRIBUTE_NONE);
+	if(!ret)
+	{
+		u32 bytesRead;
+		ret = FSFILE_GetSize(fileHandle, size);
+		if(ret)
+			return;	
+
+		buffer = linearAlloc(forceSize);
 		if(!buffer)
 			return;
 
