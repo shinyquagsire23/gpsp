@@ -3293,8 +3293,8 @@ char *debugBuffer;
 
 void debug_screen_clear()
 {
-	free(debugBuffer);
-	debugBuffer = malloc(1);
+	linearFree(debugBuffer);
+     debugBuffer = linearAlloc(1024);
 	*debugBuffer = "";
 }
 void debug_screen_start()
@@ -3304,6 +3304,8 @@ void debug_screen_start()
 	screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
 	clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
 	clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
+     debugBuffer = linearAlloc(1024);
+	*debugBuffer = "";
 }
 void debug_screen_end()
 {
@@ -3320,10 +3322,10 @@ void debug_screen_printf(const char *format, ...)
   	str_buffer_length = vsnprintf(str_buffer, 512, format, ap);
   	va_end(ap);
 
-	char *str_buffer_2 = malloc(strlen(debugBuffer)+strlen(str_buffer)+1);
+	char *str_buffer_2 = linearAlloc(strlen(debugBuffer)+strlen(str_buffer)+1);
      strcpy(str_buffer_2, debugBuffer);
      strcat(str_buffer_2, str_buffer);
-	free(debugBuffer);
+	linearFree(debugBuffer);
 	debugBuffer = str_buffer_2;
 }
 
@@ -3337,24 +3339,24 @@ void debug_screen_printl(const char *format, ...)
   	str_buffer_length = vsnprintf(str_buffer, 512, format, ap);
   	va_end(ap);
 
-	char *str_buffer_2 = malloc(strlen(debugBuffer)+strlen(str_buffer)+2);
+	char *str_buffer_2 = linearAlloc(strlen(debugBuffer)+strlen(str_buffer)+2);
      strcpy(str_buffer_2, debugBuffer);
 	strcat(str_buffer_2, str_buffer);
      strcat(str_buffer_2, "\n");
-	free(debugBuffer);
+	linearFree(debugBuffer);
 	debugBuffer = str_buffer_2;
 }
 void debug_screen_newline(u32 count)
 {
-	char *str_buffer_2 = malloc(strlen(debugBuffer)+1);
+	char *str_buffer_2 = linearAlloc(strlen(debugBuffer)+1);
      strcpy(str_buffer_2, debugBuffer);
      strcat(str_buffer_2, "\n");
-	free(debugBuffer);
+	linearFree(debugBuffer);
 	debugBuffer = str_buffer_2;
 }
 void debug_screen_update()
 {
-	gfxDrawText(GFX_BOTTOM, GFX_LEFT, &fontDefault, color16(2, 4, 10), 0xFFFF, debugBuffer, BOTTOM_HEIGHT-10, 0);
+	gfxDrawText(GFX_BOTTOM, GFX_LEFT, &fontDefault, color16(2, 4, 10), 0xFFFF, "", BOTTOM_HEIGHT-10, 0);
 	gfxFlushBuffers();
 	gfxSwapBuffers();
 }

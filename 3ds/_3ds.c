@@ -146,25 +146,24 @@ int main(int argv, char** argc)
 	{
 	  	gui_action_type gui_action = CURSOR_NONE;
 
-	  	debug_screen_start();
-	  	debug_screen_printl("                                                      ");
-	  	debug_screen_printl("Sorry, but gpSP requires a Gameboy Advance BIOS       ");
-	  	debug_screen_printl("image to run correctly. Make sure to get an           ");
-	  	debug_screen_printl("authentic one, it'll be exactly 16384 bytes large     ");
-	  	debug_screen_printl("and should have the following md5sum value:           ");
-	  	debug_screen_printl("                                                      ");
-	  	debug_screen_printl("a860e8c0b6d573d191e4ec7db1b1e4f6                      ");
-	  	debug_screen_printl("                                                      ");
-	  	debug_screen_printl("When you do get it name it gba_bios.bin and put it    ");
-	  	debug_screen_printl("in sdmc:/gba/ .                                       ");
-	  	debug_screen_printl("                                                      ");
-	  	debug_screen_printl("Press any button to exit.                             ");
+		//Init screen buffers
+		screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
+		screenTopRight = gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, NULL, NULL);
+		screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
 
-	  	debug_screen_update();
+		/* Clear Screen */
+		clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
+		clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
+	  	char* errorMsg[256];
+		sprintf(errorMsg, "                                                      \nSorry, but gpSP requires a Gameboy Advance BIOS       \nimage to run correctly. Make sure to get an           \nauthentic one, it'll be exactly 16384 bytes large     \nand should have the following md5sum value:           \n                                                      \na860e8c0b6d573d191e4ec7db1b1e4f6                      \n                                                      \nWhen you do get it name it gba_bios.bin and put it    \nin sdmc:/gba/ .                                       \n                                                      \nPress any button to exit.                             ");
+
+		print_string(errorMsg, 0xFFFF, color16(2, 4, 10), 0, 0);
+		gfxFlushBuffers();
+		gfxSwapBuffers();
 
 		while(gui_action == CURSOR_NONE)
 		{
-	  		gui_action = get_gui_input();
+  			gui_action = get_gui_input();
 		}
 
 	  	debug_screen_end();
@@ -176,23 +175,26 @@ int main(int argv, char** argc)
   	{
 		gui_action_type gui_action = CURSOR_NONE;
 
-		debug_screen_start();
-		debug_screen_printl("You have an incorrect BIOS image.                     ");
-		debug_screen_printl("While many games will work fine, some will not. It    ");
-		debug_screen_printl("is strongly recommended that you obtain the           ");
-		debug_screen_printl("correct BIOS file. Do NOT report any bugs if you      ");
-		debug_screen_printl("are seeing this message.                              ");
-		debug_screen_printl("                                                      ");
-		debug_screen_printl("Press any button to resume, at your own risk.         ");
+		//Init screen buffers
+		screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
+		screenTopRight = gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, NULL, NULL);
+		screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
 
-		debug_screen_update();
+		/* Clear Screen */
+		clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
+		clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
+          char* errorMsg[256];
+		sprintf(errorMsg,"You have an incorrect BIOS image.                     \nWhile many games will work fine, some will not. It    \nis strongly recommended that you obtain the           \ncorrect BIOS file. Do NOT report any bugs if you      \nare seeing this message.                              \n                                                      \nPress any button to resume, at your own risk.         \n");
+
+		//debug_screen_update();
+		print_string(errorMsg, 0xFFFF, color16(2, 4, 10), 0, 0);
+		gfxFlushBuffers();
+		gfxSwapBuffers();
 
 		while(gui_action == CURSOR_NONE)
 		{
   			gui_action = get_gui_input();
 		}
-
-		debug_screen_end();
   	}
 
 	init_main();
@@ -292,7 +294,7 @@ void draw(void)
 	//clearScreen(screenTopRight, GFX_TOP);
 
 	/*char str[256];
-	debug_screen_printl("lol: %02x", bios_rom[0]);
+	"lol: %02x", bios_rom[0]);
 	debug_screen_update();
 	debug_screen_clear();*/
 	//gfxDrawText(GFX_BOTTOM, GFX_LEFT, &fontPurple, str, 30, 30);
