@@ -943,6 +943,9 @@ static void render_scanline_text_##combine_op##_##alpha_op(u32 layer,         \
   render_scanline_dest_##alpha_op *dest_ptr =                                 \
    ((render_scanline_dest_##alpha_op *)scanline) + start;                     \
                                                                               \
+  if(dest_ptr > scanline + (240*400))                                         \
+     dest_ptr = scanline;                                                     \
+                                                                              \
   u16 *map_base = (u16 *)(vram + ((bg_control >> 8) & 0x1F) * (1024 * 2));    \
   u16 *map_ptr, *second_ptr;                                                  \
   u8 *tile_ptr;                                                               \
@@ -1193,6 +1196,9 @@ void render_scanline_affine_##combine_op##_##alpha_op(u32 layer,              \
   u32 i;                                                                      \
   render_scanline_dest_##alpha_op *dest_ptr =                                 \
    ((render_scanline_dest_##alpha_op *)scanline) + start;                     \
+                                                                              \
+  if(dest_ptr > scanline + (240*400))                                       \
+     dest_ptr = scanline;                                                     \
                                                                               \
   dx = (s16)io_registers[REG_BG2PA + layer_offset];                           \
   dy = (s16)io_registers[REG_BG2PC + layer_offset];                           \
@@ -2160,7 +2166,7 @@ static void order_layers(u32 layer_flags)
                                                                               \
   for(i = _start; i < _end; i++)                                              \
   {                                                                           \
-    dest_ptr[i] = color;                                                      \
+    dest_ptr[i*240] = color;                                                      \
   }                                                                           \
 
 
@@ -2533,7 +2539,7 @@ static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_
     if(obj_alpha_count[io_registers[REG_VCOUNT]] > 0)                         \
     {                                                                         \
       /* Render based on special effects mode. */                             \
-      u32 screen_buffer[240];                                                 \
+      u32 *screen_buffer = linearAlloc(240*4);                                                 \
       switch((bldcnt >> 6) & 0x03)                                            \
       {                                                                       \
         /* Alpha blend */                                                     \
@@ -2577,6 +2583,7 @@ static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_
                                                                               \
       renderer(color32, partial_alpha, screen_buffer);                        \
       expand_blend(screen_buffer, scanline, _start, _end);                    \
+      linearFree(screen_buffer);                                               \
     }                                                                         \
     else                                                                      \
     {                                                                         \
@@ -2588,9 +2595,10 @@ static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_
         {                                                                     \
           if(alpha_condition)                                                 \
           {                                                                   \
-            u32 screen_buffer[240];                                           \
+            u32 *screen_buffer = linearAlloc(240*4);                                           \
             renderer(alpha, alpha_obj, screen_buffer);                        \
             expand_blend(screen_buffer, scanline, _start, _end);              \
+            linearFree(screen_buffer);                                        \
             return;                                                           \
           }                                                                   \
           break;                                                              \
@@ -3161,7 +3169,9 @@ void update_scanline()
   u32 pitch = get_screen_pitch();
   u32 dispcnt = io_registers[REG_DISPCNT];
   u32 vcount = io_registers[REG_VCOUNT];
-  u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL) + ((160 - vcount)*2);
+  u32 x_offs = (TOP_WIDTH / 2) - (240/2);
+  u32 y_offs = (240 / 2) - (160 / 2);
+  u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL) + ((160 + y_offs - vcount)*2) + (x_offs * 240 * 2);
   u32 video_mode = dispcnt & 0x07;
 
   // If OAM has been modified since the last scanline has been updated then
@@ -3268,10 +3278,10 @@ void blit_to_screen(u16 *src, u32 w, u32 h, u32 dest_x, u32 dest_y)
   {
     for(x = 0; x < w1; x++)
     {
-      dest_ptr[x] = src_ptr[x];
+      dest_ptr[x*240] = src_ptr[x];
     }
     src_ptr += w;
-    dest_ptr += pitch;
+    dest_ptr -= 1;
   }
 }
 
