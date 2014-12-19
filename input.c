@@ -1088,19 +1088,20 @@ u32 gamepad_config[32] =
   BUTTON_L,                  // L
   BUTTON_START,              // X
   BUTTON_SELECT,             // Y
-  -1,
-  -1,
+  0,
+  0,
   BUTTON_R,                  // ZR
   BUTTON_L,                  // ZL
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -2,               // Touch
-  -1,
-  -1,
-  -1,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,               // Touch
+  0,
+  0,
+  0,
+  0,
   BUTTON_UP,                 // C-stick up
   BUTTON_DOWN,               // C-stick down
   BUTTON_LEFT,               // C-stick left
@@ -1175,7 +1176,7 @@ u32 update_input()
    hidScanInput();
    u32 kDown = hidKeysDown();
    u32 kHeld = hidKeysHeld();
-   int newkey;
+   int newkey = 0;
 
    int i = 0;
    u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
@@ -1184,8 +1185,19 @@ u32 update_input()
 	   if(kHeld & BIT(i))
         {
 		   newkey |= gamepad_config[i];
-        }
+        } 
    }
+
+   /*for(i = 0; i < 10; i++)
+   {
+	   if(key & BIT(i))
+        {
+		   screen_offset[i] = 0xFFFF; 
+        }
+        else
+	   	screen_offset[i] = 0; 
+   }*/
+
   if (key != newkey) {
      key = newkey;
      trigger_key(key);
