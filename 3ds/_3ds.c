@@ -69,6 +69,8 @@ u32 synchronize_flag = 1;
 u32 update_backup_flag = 1;
 u8 exit_time = 0;
 
+u16 *screen_buffer;
+
 void gpsp_plat_init(void)
 {
 	// Initialize services
@@ -90,7 +92,9 @@ gfxWriteFramebufferInfo(GFX_BOTTOM);
     dir.handle = 0;
     fs_chdir("/");
 
-	gfxSet3D(true);
+	screen_buffer = linearAlloc(240*160*4);
+
+	//gfxSet3D(true);
 
 	gspWaitForVBlank(); //wait to let the app register itself
 }

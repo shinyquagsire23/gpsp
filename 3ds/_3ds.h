@@ -51,6 +51,8 @@ extern u32 update_backup_flag;
 
 extern u8 exit_time;
 
+extern u16 *screen_buffer;
+
 #define MAX_FILENAME_LEN 256
 
 //extern char *file_ext[];

@@ -3161,7 +3161,7 @@ void update_scanline()
   u32 pitch = get_screen_pitch();
   u32 dispcnt = io_registers[REG_DISPCNT];
   u32 vcount = io_registers[REG_VCOUNT];
-  u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL) + (vcount*240*2);
+  u16 *screen_offset = screen_buffer + (vcount*240*2);
   u32 video_mode = dispcnt & 0x07;
 
   // If OAM has been modified since the last scanline has been updated then

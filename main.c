@@ -619,6 +619,18 @@ u32 update_gba()
           if(!synchronize_flag)
             print_string("-FF-", 0xFFFF, 0x000, 216, 0);
 
+          u32 i;
+		u32 j;
+		u16 *screen_offset = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
+		u32 x_offs = 200 - 120;
+		u32 y_offs = 120 - 80; 
+		for(i = 0; i < 240; i++)
+		{
+			for(j = 0; j < 160; j++)
+			{
+				screen_offset[((160-j)+(i*240)) + y_offs + (x_offs * 240)] = screen_buffer[i+(j*240*2)];
+			}
+		}
           update_screen();
 
           synchronize();
