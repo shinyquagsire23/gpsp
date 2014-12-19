@@ -1053,9 +1053,8 @@ u32 gamepad_config_map[32] =
   BUTTON_ID_SELECT,             // Y
   -1,
   -1,
-  BUTTON_ID_R,                  // ZR
   BUTTON_ID_L,                  // ZL
-  -1,
+  BUTTON_ID_R,                  // ZR
   -1,
   -1,
   -1,
@@ -1064,21 +1063,21 @@ u32 gamepad_config_map[32] =
   -1,
   -1,
   -1,
-  BUTTON_ID_UP,                 // C-stick up
-  BUTTON_ID_DOWN,               // C-stick down
-  BUTTON_ID_LEFT,               // C-stick left
-  BUTTON_ID_RIGHT,               // C-stick right
-  BUTTON_ID_UP,                 // C-pad up
-  BUTTON_ID_DOWN,               // C-pad down
-  BUTTON_ID_LEFT,               // C-pad left
-  BUTTON_ID_RIGHT               // C-pad right
+  BUTTON_ID_RIGHT,              // C-stick Right
+  BUTTON_ID_LEFT,               // C-stick Left
+  BUTTON_ID_UP,                 // C-stick Up
+  BUTTON_ID_DOWN,               // C-stick Down
+  BUTTON_ID_RIGHT,              // C-pad Right
+  BUTTON_ID_LEFT,               // C-pad Left
+  BUTTON_ID_UP,                 // C-pad Up
+  BUTTON_ID_DOWN                // C-pad Down
 };
 
 u32 gamepad_config[32] =
 {
   BUTTON_A,                  // A
   BUTTON_B,                  // B
-  BUTTON_SELECT,               // Select
+  BUTTON_SELECT,             // Select
   BUTTON_START,              // Start
   BUTTON_RIGHT,              // Right
   BUTTON_LEFT,               // Left
@@ -1090,25 +1089,24 @@ u32 gamepad_config[32] =
   BUTTON_SELECT,             // Y
   -1,
   -1,
-  BUTTON_R,                  // ZR
   BUTTON_L,                  // ZL
+  BUTTON_R,                  // ZR
   -1,
   -1,
   -1,
   -1,
-  -1,
-  -2,               // Touch
-  -1,
+  -2,                        // Touch
   -1,
   -1,
-  BUTTON_UP,                 // C-stick up
-  BUTTON_DOWN,               // C-stick down
-  BUTTON_LEFT,               // C-stick left
-  BUTTON_RIGHT,               // C-stick right
-  BUTTON_UP,                 // C-pad up
-  BUTTON_DOWN,               // C-pad down
-  BUTTON_LEFT,               // C-pad left
-  BUTTON_RIGHT               // C-pad right
+  -1,
+  BUTTON_RIGHT,              // C-stick Right
+  BUTTON_LEFT,               // C-stick Left
+  BUTTON_UP,                 // C-stick Up
+  BUTTON_DOWN,               // C-stick Down
+  BUTTON_RIGHT,              // C-pad Right
+  BUTTON_LEFT,               // C-pad Left
+  BUTTON_UP,                 // C-pad Up
+  BUTTON_DOWN                // C-pad Down
 };
 
 gui_action_type get_gui_input()
