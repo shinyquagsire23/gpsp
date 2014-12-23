@@ -28,6 +28,9 @@
 
 #endif
 
+#include <stdlib.h> 
+#include <stdio.h> 
+
 #ifdef RPI_BUILD
 //#include "input.h"
 #endif
@@ -138,6 +141,7 @@ s32 load_file(const char **wildcards, char *result)
   struct dirent *current_file;
   struct stat file_info;
   char current_dir_name[MAX_PATH];
+  u8 level = 0;
   char current_dir_short[81];
   u32 current_dir_length;
   u32 total_filenames_allocated;
@@ -183,9 +187,6 @@ s32 load_file(const char **wildcards, char *result)
     num_dirs = 0;
     chosen_file = 0;
     chosen_dir = 0;
-
-    getcwd(current_dir_name, MAX_PATH);
-    //current_dir = opendir(current_dir_name);
 
     do
     {
@@ -504,7 +505,25 @@ s32 load_file(const char **wildcards, char *result)
           if(current_column == 1)
           {
             repeat = 0;
+            if(!(current_dir_selection == 0 && level == 0))
+            {
+              strcat(current_dir_name, "/");
+              strcat(current_dir_name, dir_list[current_dir_selection]);
+            }
             fs_chdir(dir_list[current_dir_selection]);
+
+            if(current_dir_selection == 0)
+            {
+              if(level != 0)
+                level--;
+            }
+            else
+            {
+              level++;
+            }
+
+            if(level == 0)
+              current_dir_name[0] = 0;
           }
           else
           {
@@ -512,7 +531,8 @@ s32 load_file(const char **wildcards, char *result)
             {
               repeat = 0;
               return_value = 0;
-              strcpy(result, file_list[current_file_selection]);
+              strcat(current_dir_name, "/");
+              strcpy(result, strcat(current_dir_name, file_list[current_file_selection]));
             }
           }
           break;
