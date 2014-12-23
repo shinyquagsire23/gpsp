@@ -8,7 +8,7 @@
 #include "../common.h"
 
 char main_path[512];
-char *file_ext[] = { ".gba", ".bin", ".zip", NULL };
+char *file_ext[] = { ".gba", ".bin", NULL };
 
 struct FileHandle {
     Handle handle;
