@@ -68,6 +68,7 @@ u32 synchronize_flag = 1;
 
 u32 update_backup_flag = 1;
 u8 exit_time = 0;
+u8 has_ninjhax = 0;
 
 u16 *screen_buffer;
 
@@ -78,12 +79,18 @@ void gpsp_plat_init(void)
 	aptInit();			// mandatory
 	hidInit(NULL);	// input (buttons, screen)
 	gfxInit();			// graphics
-gfxSetDoubleBuffering(GFX_TOP, 0);
-gfxSetDoubleBuffering(GFX_BOTTOM, 0);
-gfxSetScreenFormat(GFX_TOP, GSP_RGB5_A1_OES);
-gfxSetScreenFormat(GFX_BOTTOM, GSP_RGB5_A1_OES);
-gfxWriteFramebufferInfo(GFX_TOP);
-gfxWriteFramebufferInfo(GFX_BOTTOM);
+	has_ninjhax = !hbInit();			//ninjhax magics	
+
+	//if(has_ninjhax)
+		ninjhax_handlememory();
+
+	gfxSetDoubleBuffering(GFX_TOP, 0);
+	gfxSetDoubleBuffering(GFX_BOTTOM, 0);
+	gfxSetScreenFormat(GFX_TOP, GSP_RGB5_A1_OES);
+	gfxSetScreenFormat(GFX_BOTTOM, GSP_RGB5_A1_OES);
+	gfxWriteFramebufferInfo(GFX_TOP);
+	gfxWriteFramebufferInfo(GFX_BOTTOM);
+
 	fsInit();
 	sdmcArchive = (FS_archive){0x9, (FS_path){PATH_EMPTY, 1, (u8*)""}};
 	FSUSER_OpenArchive(NULL, &sdmcArchive);
@@ -94,15 +101,49 @@ gfxWriteFramebufferInfo(GFX_BOTTOM);
 
 	screen_buffer = linearAlloc(240*160*4);
 
-	//gfxSet3D(true);
-
 	gspWaitForVBlank(); //wait to let the app register itself
+}
+
+/*
+	u32* test = memalign(0x1000, 0x10000);
+
+	HB_ReprotectMemory(test, 10, 7, &result);
+	*((u32*)test) = 0xE12FFF11; //bx r1
+	HB_FlushInvalidateCache();
+	void (*test7_func)(char* str, void* printaddr) = test;
+	test7_func("test7 success\n", (void*)&printf);
+*/
+
+void ninjhax_handlememory()
+{
+	int result = 0;
+
+	HB_ReprotectMemory(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
+	HB_ReprotectMemory(rom_branch_hash, ROM_BRANCH_HASH_SIZE / 4096, 7, &result);
+	HB_ReprotectMemory(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
+	HB_ReprotectMemory(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
+
+	//Test to see if we can run stuff
+	*((u32*)rom_translation_cache) = 0xE12FFF11; //bx r1
+	*((u32*)rom_branch_hash) = 0xE12FFF11; //bx r1
+	*((u32*)ram_translation_cache) = 0xE12FFF11; //bx r1
+	*((u32*)bios_translation_cache) = 0xE12FFF11; //bx r1
+	HB_FlushInvalidateCache();
+	void (*test_func)(char* str, void* printaddr) = rom_translation_cache;
+	test_func("success", (void*)&printf);
+	void (*test_func2)(char* str, void* printaddr) = rom_branch_hash;
+	test_func2("success", (void*)&printf);
+	void (*test_func3)(char* str, void* printaddr) = ram_translation_cache;
+	test_func3("success", (void*)&printf);
+	void (*test_func4)(char* str, void* printaddr) = bios_translation_cache;
+	test_func4("success", (void*)&printf);
 }
 
 void gpsp_plat_quit(void)
 {
 	  	// Exit services
 	fsExit();
+ 	hbExit();
 	gfxExit();
 	hidExit();
 	aptExit();
@@ -254,14 +295,15 @@ int main(int argv, char** argc)
   	}*/
 
   	trigger_ext_event();
-
-  	//execute_arm_translate(execute_cycles);
-  	execute_arm(execute_cycles);
+	
+	//if(has_ninjhax)
+  		execute_arm_translate(execute_cycles); //ninjhax dynrec
+  	//execute_arm(execute_cycles);
 
 
 
 	// Main loop
-	/*while (aptMainLoop())
+	while (aptMainLoop())
 	{
 		// Wait next screen refresh
 		gspWaitForVBlank();
@@ -277,7 +319,7 @@ int main(int argv, char** argc)
 		}
 		
 		draw();
-	}*/
+	}
 	
 	gpsp_plat_quit();
 	

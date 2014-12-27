@@ -23,20 +23,20 @@
 
 #include "common.h"
 
-u8 rom_translation_cache[1];
+u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE] __attribute__((aligned(0x1000)));
 u8 *rom_translation_ptr = rom_translation_cache;
 
-u8 ram_translation_cache[1];
+u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE] __attribute__((aligned(0x1000)));
 u8 *ram_translation_ptr = ram_translation_cache;
 u32 iwram_code_min = 0xFFFFFFFF;
 u32 iwram_code_max = 0xFFFFFFFF;
 u32 ewram_code_min = 0xFFFFFFFF;
 u32 ewram_code_max = 0xFFFFFFFF;
 
-u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
+u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE] __attribute__((aligned(0x1000)));
 u8 *bios_translation_ptr = bios_translation_cache;
 
-u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
+u32 rom_branch_hash[ROM_BRANCH_HASH_SIZE] __attribute__((aligned(0x1000)));
 
 // Default
 u32 idle_loop_target_pc = 0xFFFFFFFF;
@@ -189,7 +189,7 @@ extern u8 bit_count[256];
 
 #include "psp/mips_emit.h"
 
-#elif defined(ARM_ARCH) || defined(_3DS)
+#elif defined(ARM_ARCH)
 
 #include "arm/arm_emit.h"
 
@@ -3459,13 +3459,9 @@ void flush_translation_cache_ram()
 
 void flush_translation_cache_rom()
 {
-#ifndef PC_BUILD
   invalidate_icache_region(rom_translation_cache,
-   rom_translation_ptr - rom_translation_cache + 0x100);
-#endif
-#ifdef ARM_ARCH
+  rom_translation_ptr - rom_translation_cache + 0x100);
   last_rom_translation_ptr = rom_translation_cache;
-#endif
 
   rom_translation_ptr = rom_translation_cache;
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
@@ -3473,13 +3469,9 @@ void flush_translation_cache_rom()
 
 void flush_translation_cache_bios()
 {
-#ifndef PC_BUILD
   invalidate_icache_region(bios_translation_cache,
-   bios_translation_ptr - bios_translation_cache + 0x100);
-#endif
-#ifdef ARM_ARCH
+  bios_translation_ptr - bios_translation_cache + 0x100);
   last_bios_translation_ptr = bios_translation_cache;
-#endif
 
   bios_block_tag_top = 0x0101;
   bios_translation_ptr = bios_translation_cache;
@@ -3492,17 +3484,17 @@ void dump_translation_cache()
 {
   file_open(ram_cache, cache_dump_prefix "ram_cache.bin", write);
   file_write(ram_cache, ram_translation_cache,
-   ram_translation_ptr - ram_translation_cache);
+  ram_translation_ptr - ram_translation_cache);
   file_close(ram_cache);
 
   file_open(rom_cache, cache_dump_prefix "rom_cache.bin", write);
   file_write(rom_cache, rom_translation_cache,
-   rom_translation_ptr - rom_translation_cache);
+  rom_translation_ptr - rom_translation_cache);
   file_close(rom_cache);
 
   file_open(bios_cache, cache_dump_prefix "bios_cache.bin", write);
   file_write(bios_cache, bios_translation_cache,
-   bios_translation_ptr - bios_translation_cache);
+  bios_translation_ptr - bios_translation_cache);
   file_close(bios_cache);
 }
 

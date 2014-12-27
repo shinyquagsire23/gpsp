@@ -45,7 +45,7 @@
 #define FILE_LIST_POSITION 5
 #define DIR_LIST_POSITION 260
 #elif defined(_3DS)
-#define FILE_LIST_ROWS 25
+#define FILE_LIST_ROWS 18
 #define FILE_LIST_POSITION 5
 #define DIR_LIST_POSITION (320 * 3 / 4)
 #else
@@ -298,6 +298,7 @@ s32 load_file(const char **wildcards, char *result)
       //flip_screen();
 
       print_string(current_dir_short, COLOR_ACTIVE_ITEM, COLOR_BG, 0, 0);
+      print_string(has_ninjhax ? "Dynrec" : "Interpret", COLOR_ACTIVE_ITEM, COLOR_BG, 0, 240-10);
 #if defined GP2X_BUILD
       print_string("Press X to return to the main menu.",
        COLOR_HELP_TEXT, COLOR_BG, 20, 220);

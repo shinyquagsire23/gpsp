@@ -665,10 +665,7 @@ u8 *last_bios_translation_ptr = bios_translation_cache;
 #define translate_invalidate_dcache_one(which)                                \
   if (which##_translation_ptr > last_##which##_translation_ptr)               \
   {                                                                           \
-    /*warm_cache_op_range(WOP_D_CLEAN, last_##which##_translation_ptr,          \
-      which##_translation_ptr - last_##which##_translation_ptr);              \
-    warm_cache_op_range(WOP_I_INVALIDATE, last_##which##_translation_ptr, 32);\
-    last_##which##_translation_ptr = which##_translation_ptr;*/                 \
+                    \
   }
 
 #define translate_invalidate_dcache()                                         \
@@ -679,7 +676,7 @@ u8 *last_bios_translation_ptr = bios_translation_cache;
 }
 
 #define invalidate_icache_region(addr, size)                                  \
-  //warm_cache_op_range(WOP_I_INVALIDATE, addr, size)
+  /*warm_cache_op_range(WOP_I_INVALIDATE, addr, size)*/ \
 
 
 #define block_prologue_size 0

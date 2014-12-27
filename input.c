@@ -1059,7 +1059,7 @@ u32 gamepad_config_map[32] =
   -1,
   -1,
   -1,
-  BUTTON_ID_MENU,               // Touch
+  0,               // Touch
   -1,
   -1,
   -1,

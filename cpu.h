@@ -136,28 +136,20 @@ s32 translate_block_arm(u32 pc, translation_region_type translation_region,
 s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
  u32 smc_enable);
 
-#ifdef PSP_BUILD
-
-#define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4)
-#define RAM_TRANSLATION_CACHE_SIZE (1024 * 384)
-#define BIOS_TRANSLATION_CACHE_SIZE (1024 * 128)
-#define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024)
-
-#else
-
 #define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4 * 5)
 #define RAM_TRANSLATION_CACHE_SIZE (1024 * 384 * 2)
 #define BIOS_TRANSLATION_CACHE_SIZE (1024 * 128 * 2)
 #define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024 * 32)
 
-#endif
-
-extern u8 rom_translation_cache[1];
-extern u8 ram_translation_cache[1];
+extern u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
+extern u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
 extern u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
 extern u8 *rom_translation_ptr;
 extern u8 *ram_translation_ptr;
 extern u8 *bios_translation_ptr;
+extern u8 *last_rom_translation_ptr;
+extern u8 *last_ram_translation_ptr;
+extern u8 *last_bios_translation_ptr;
 
 #define MAX_TRANSLATION_GATES 8
 
@@ -176,7 +168,7 @@ extern u32 in_interrupt;
 #define ROM_BRANCH_HASH_SIZE (1024 * 64)
 
 /* EDIT: Shouldn't this be extern ?! */
-extern u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
+extern u32 rom_branch_hash[ROM_BRANCH_HASH_SIZE] __attribute__((aligned(0x1000)));
 
 void flush_translation_cache_rom();
 void flush_translation_cache_ram();
