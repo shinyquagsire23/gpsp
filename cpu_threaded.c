@@ -36,7 +36,7 @@ u32 ewram_code_max = 0xFFFFFFFF;
 u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE] __attribute__((aligned(0x1000)));
 u8 *bios_translation_ptr = bios_translation_cache;
 
-u32 rom_branch_hash[ROM_BRANCH_HASH_SIZE] __attribute__((aligned(0x1000)));
+u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
 
 // Default
 u32 idle_loop_target_pc = 0xFFFFFFFF;

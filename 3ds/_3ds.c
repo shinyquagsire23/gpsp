@@ -119,24 +119,20 @@ void ninjhax_handlememory()
 	int result = 0;
 
 	HB_ReprotectMemory(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
-	HB_ReprotectMemory(rom_branch_hash, ROM_BRANCH_HASH_SIZE / 4096, 7, &result);
 	HB_ReprotectMemory(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
 	HB_ReprotectMemory(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
 
 	//Test to see if we can run stuff
 	*((u32*)rom_translation_cache) = 0xE12FFF11; //bx r1
-	*((u32*)rom_branch_hash) = 0xE12FFF11; //bx r1
 	*((u32*)ram_translation_cache) = 0xE12FFF11; //bx r1
 	*((u32*)bios_translation_cache) = 0xE12FFF11; //bx r1
 	HB_FlushInvalidateCache();
 	void (*test_func)(char* str, void* printaddr) = rom_translation_cache;
 	test_func("success", (void*)&printf);
-	void (*test_func2)(char* str, void* printaddr) = rom_branch_hash;
+	void (*test_func2)(char* str, void* printaddr) = ram_translation_cache;
 	test_func2("success", (void*)&printf);
-	void (*test_func3)(char* str, void* printaddr) = ram_translation_cache;
+	void (*test_func3)(char* str, void* printaddr) = bios_translation_cache;
 	test_func3("success", (void*)&printf);
-	void (*test_func4)(char* str, void* printaddr) = bios_translation_cache;
-	test_func4("success", (void*)&printf);
 }
 
 void gpsp_plat_quit(void)

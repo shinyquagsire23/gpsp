@@ -168,7 +168,7 @@ extern u32 in_interrupt;
 #define ROM_BRANCH_HASH_SIZE (1024 * 64)
 
 /* EDIT: Shouldn't this be extern ?! */
-extern u32 rom_branch_hash[ROM_BRANCH_HASH_SIZE] __attribute__((aligned(0x1000)));
+extern u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
 
 void flush_translation_cache_rom();
 void flush_translation_cache_ram();
