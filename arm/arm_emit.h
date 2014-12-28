@@ -677,7 +677,6 @@ u8 *last_bios_translation_ptr = bios_translation_cache;
   translate_invalidate_dcache_one(rom)                                        \
   translate_invalidate_dcache_one(ram)                                        \
   translate_invalidate_dcache_one(bios)                                       \
-   HB_FlushInvalidateCache();                                                 \
 }
 
 #define invalidate_icache_region(addr, size)                                  \

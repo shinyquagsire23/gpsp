@@ -2847,7 +2847,6 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
       break;                                                                  \
   }                                                                           \
                                                                               \
-  translate_invalidate_dcache();                                              \
   invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
   return block_address;                                                       \
 }                                                                             \
@@ -3395,8 +3394,6 @@ s32 translate_block_##type(u32 pc, translation_region_type                    \
      external_block_exits[i].branch_source, translation_target);              \
   }                                                                           \
                                                                               \
-  translate_invalidate_dcache();                                              \
-  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
   return 0;                                                                   \
 }                                                                             \
 

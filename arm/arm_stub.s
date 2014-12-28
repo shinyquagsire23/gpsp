@@ -474,6 +474,13 @@ execute_swi_function_builder(div, thumb)
 @ Uses sp as reg_base; must hold consistently true.
 
 execute_arm_translate:
+  mov r0, #0x8
+  mov r1, #0x8000
+  bl linearMemAlign
+  add r0, #0x8000
+  push {sp}
+  mov sp, r0
+
   sub sp, sp, #0x100                      @ allocate room for register data
 
   mvn reg_cycles, r0                      @ load cycle counter
