@@ -2758,6 +2758,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
       block_lookup_translate(type, bios, 0);                                  \
       if(translation_recursion_level == 0)                                    \
         bios_region_read_allow();                                             \
+  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
       break;                                                                  \
                                                                               \
     case 0x2:                                                                 \
@@ -2765,6 +2766,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
       block_lookup_translate(type, ram, 1);                                   \
       if(translation_recursion_level == 0)                                    \
         bios_region_read_protect();                                           \
+  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
       break;                                                                  \
                                                                               \
     case 0x3:                                                                 \
@@ -2772,6 +2774,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
       block_lookup_translate(type, ram, 1);                                   \
       if(translation_recursion_level == 0)                                    \
         bios_region_read_protect();                                           \
+  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
       break;                                                                  \
                                                                               \
     case 0x8 ... 0xD:                                                         \
@@ -2821,6 +2824,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
                                                                               \
         if(translation_recursion_level == 0)                                  \
           translate_invalidate_dcache();                                      \
+  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
       }                                                                       \
       if(translation_recursion_level == 0)                                    \
         bios_region_read_protect();                                           \
@@ -2847,7 +2851,6 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
       break;                                                                  \
   }                                                                           \
                                                                               \
-  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
   return block_address;                                                       \
 }                                                                             \
 
