@@ -69,6 +69,9 @@ u32 synchronize_flag = 1;
 u32 update_backup_flag = 1;
 u8 exit_time = 0;
 u8 has_ninjhax = 0;
+u8 has_sound = 0;
+u32 old_stack = 0;
+u32 return_place = 0;
 
 u16 *screen_buffer;
 
@@ -80,6 +83,7 @@ void gpsp_plat_init(void)
 	hidInit(NULL);	// input (buttons, screen)
 	gfxInit();			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
+	has_sound = !CSND_initialize(NULL);
 
 	if(has_ninjhax)
 		ninjhax_handlememory();
@@ -240,7 +244,7 @@ int main(int argv, char** argc)
 
 	init_main();
 	init_sound(1);
-	sound_on = 0; //For now
+	//sound_on = 1; //For now
 
 	init_input();
 
@@ -292,9 +296,9 @@ int main(int argv, char** argc)
 
   	trigger_ext_event();
 	
-	if(has_ninjhax)
+	//if(has_ninjhax)
   		execute_arm_translate(execute_cycles); //ninjhax dynrec
-  	execute_arm(execute_cycles);
+  	//execute_arm(execute_cycles);
 
 
 

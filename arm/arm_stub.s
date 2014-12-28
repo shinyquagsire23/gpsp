@@ -228,6 +228,11 @@ arm_update_gba_##name:                                                       ;\
                                                                              ;\
   mvn reg_cycles, r0                      /* load new cycle count          */;\
                                                                              ;\
+  ldr r0, exit_time_ptr                                                      ;\
+  ldrb r0, [r0]                           /* load exit_time value          */;\
+  cmp r0, #0x1                            /* see if it's set               */;\
+  bge 3f                                  /* if it is, goto 3 and return   */;\
+                                                                             ;\
   ldr r0, [reg_base, #CHANGED_PC_STATUS]  /* load PC changed status        */;\
   cmp r0, #0                              /* see if PC has changed         */;\
   beq 1f                                  /* if not return                 */;\
@@ -252,6 +257,13 @@ arm_update_gba_##name:                                                       ;\
   call_c_function(block_lookup_address_thumb)                                ;\
   restore_flags()                                                            ;\
   bx r0                                   /* jump to new ARM block         */;\
+3:                                                                           ;\
+  ldr r1, old_stack_ptr                                                      ;\
+  ldr r1, [r1]                                                               ;\
+  mov sp, r1                                                                 ;\
+  ldr r0, return_place_ptr                                                   ;\
+  ldr r0, [r0]                                                               ;\
+  bx r0                                                                      ;\
 
 
 arm_update_gba_builder(arm, arm, straight)
@@ -259,6 +271,8 @@ arm_update_gba_builder(thumb, thumb, straight)
 
 arm_update_gba_builder(idle_arm, arm, add)
 arm_update_gba_builder(idle_thumb, thumb, add)
+
+exit_time_ptr: .long exit_time
 
 
 
@@ -474,12 +488,18 @@ execute_swi_function_builder(div, thumb)
 @ Uses sp as reg_base; must hold consistently true.
 
 execute_arm_translate:
+  ldr r1, return_place_ptr @ Store our link register
+  str lr, [r1]             @ and our stack pointer
+  ldr r1, old_stack_ptr    @ for later so we can
+  str sp, [r1]             @ actually return safely
+
+  @ Allocate a new stack of 0x8000 bytes 
+  @ and change sp to it
   mov r0, #0x8
   mov r1, #0x8000
   bl linearMemAlign
   add r0, #0x8000
-  push {sp}
-  mov sp, r0
+  mov sp, r0                                                        
 
   sub sp, sp, #0x100                      @ allocate room for register data
 
@@ -507,6 +527,9 @@ execute_arm_translate:
   call_c_function(block_lookup_address_thumb)
   extract_flags()                         @ load flags
   bx r0                                   @ jump to first Thumb block
+
+old_stack_ptr: .long old_stack
+return_place_ptr: .long return_place
 
 
 @ Write out to memory.
