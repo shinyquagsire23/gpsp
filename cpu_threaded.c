@@ -2675,6 +2675,10 @@ u32 bios_block_tag_top = 0x0101;
      mem_type##_translation_region, smc_enable);                              \
   }                                                                           \
 
+void derp()
+{
+}
+
 // 0x0101 is the smallest tag that can be used. 0xFFFF is marked
 // in the middle of blocks and used for write guarding, it doesn't
 // indicate a valid block either (it's okay to compile a new block
@@ -2843,6 +2847,8 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
       break;                                                                  \
   }                                                                           \
                                                                               \
+  translate_invalidate_dcache();                                              \
+  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
   return block_address;                                                       \
 }                                                                             \
 
@@ -3389,6 +3395,8 @@ s32 translate_block_##type(u32 pc, translation_region_type                    \
      external_block_exits[i].branch_source, translation_target);              \
   }                                                                           \
                                                                               \
+  translate_invalidate_dcache();                                              \
+  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);                             \
   return 0;                                                                   \
 }                                                                             \
 
@@ -3402,13 +3410,10 @@ void flush_translation_cache_ram()
    flush_ram_count, reg[REG_PC], iwram_code_min, iwram_code_max,
    ewram_code_min, ewram_code_max); */
 
-#ifndef PC_BUILD
   invalidate_icache_region(ram_translation_cache,
    (ram_translation_ptr - ram_translation_cache) + 0x100);
-#endif
-#ifdef ARM_ARCH
   last_ram_translation_ptr = ram_translation_cache;
-#endif
+
   ram_translation_ptr = ram_translation_cache;
   ram_block_tag_top = 0x0101;
   if(iwram_code_min != 0xFFFFFFFF)

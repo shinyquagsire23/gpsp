@@ -299,7 +299,7 @@ int main(int argv, char** argc)
 
 
 	// Main loop
-	while (aptMainLoop())
+	/*while (aptMainLoop())
 	{
 		// Wait next screen refresh
 		gspWaitForVBlank();
@@ -315,7 +315,7 @@ int main(int argv, char** argc)
 		}
 		
 		draw();
-	}
+	}*/
 	
 	gpsp_plat_quit();
 	

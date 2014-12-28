@@ -662,21 +662,26 @@ u8 *last_rom_translation_ptr = rom_translation_cache;
 u8 *last_ram_translation_ptr = ram_translation_cache;
 u8 *last_bios_translation_ptr = bios_translation_cache;
 
+// Thanks Normatt!
 #define translate_invalidate_dcache_one(which)                                \
-  if (which##_translation_ptr > last_##which##_translation_ptr)               \
-  {                                                                           \
-                    \
-  }
+   if (which##_translation_ptr > last_##which##_translation_ptr)               \
+   {                                                                           \
+    GSPGPU_FlushDataCache(NULL,last_##which##_translation_ptr,                 \
+      which##_translation_ptr - last_##which##_translation_ptr);               \
+    GSPGPU_InvalidateDataCache(NULL,last_##which##_translation_ptr, 32);       \
+    last_##which##_translation_ptr = which##_translation_ptr;                  \
+   } 
 
 #define translate_invalidate_dcache()                                         \
 {                                                                             \
   translate_invalidate_dcache_one(rom)                                        \
   translate_invalidate_dcache_one(ram)                                        \
   translate_invalidate_dcache_one(bios)                                       \
+   HB_FlushInvalidateCache();                                                 \
 }
 
 #define invalidate_icache_region(addr, size)                                  \
-  /*warm_cache_op_range(WOP_I_INVALIDATE, addr, size)*/ \
+   HB_FlushInvalidateCache();\
 
 
 #define block_prologue_size 0

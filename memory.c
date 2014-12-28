@@ -64,7 +64,7 @@ u8 ewram[1024 * 256 * 2];
 u8 iwram[1024 * 32 * 2];
 u8 vram[1024 * 96 * 2];
 
-u8 *bios_rom;
+u8 bios_rom[1024 * 32];
 u32 bios_read_protect;
 
 // Up to 128kb, store SRAM, flash ROM, or EEPROM here.
@@ -2190,7 +2190,9 @@ u32 load_gamepak(char *name)
 s32 load_bios(char *name)
 {
   u64 size = 0;
-  bios_rom = utilLoad(name, &size);
+  int result = 0;
+  utilLoad(name, &size);
+  HB_ReprotectMemory(bios_rom, 8, 7, &result);
 
   if(size == 0)
 	return -1;
@@ -2214,7 +2216,7 @@ u8 *utilLoad(char *file, u64* size)
 		if(ret)
 			return;	
 
-		buffer = linearAlloc(*size);
+		buffer = bios_rom;
 		if(!buffer)
 			return;
 

@@ -210,7 +210,7 @@ extern u8 ewram[1024 * 256 * 2];
 extern u8 iwram[1024 * 32 * 2];
 extern u8 vram[1024 * 96 * 2];
 
-extern u8 *bios_rom;
+extern u8 bios_rom[1024 * 32];
 extern u32 bios_read_protect;
 
 extern u8 *memory_map_read[8 * 1024];
