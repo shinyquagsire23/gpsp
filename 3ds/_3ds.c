@@ -143,6 +143,7 @@ void gpsp_plat_quit(void)
 {
 	  	// Exit services
 	fsExit();
+	CSND_shutdown();
  	hbExit();
 	gfxExit();
 	hidExit();

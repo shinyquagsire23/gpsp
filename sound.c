@@ -25,7 +25,7 @@ u32 global_enable_audio = 1;
 direct_sound_struct direct_sound_channel[2];
 gbc_sound_struct gbc_sound_channel[4];
 
-#ifdef RPI_BUILD
+#ifdef _3DS
 u32 sound_frequency = 22050;
 #else
 u32 sound_frequency = 44100;
@@ -44,7 +44,10 @@ u32 audio_buffer_size_number = 8;
 
 u32 sound_on;
 static u32 audio_buffer_size;
-static s16 sound_buffer[BUFFER_SIZE];
+static s16 *sound_buffer_l;
+static s16 *sound_buffer_r;
+static s16 *sound_buffer_play_l;
+static s16 *sound_buffer_play_r;
 static u32 sound_buffer_base;
 
 static u32 sound_last_cpu_ticks;
@@ -89,25 +92,25 @@ void sound_timer_queue32(u32 channel, u32 value)
 #define render_sample_null()                                                  \
 
 #define render_sample_left()                                                  \
-  sound_buffer[buffer_index] += current_sample +                              \
+  sound_buffer_play_l[buffer_index] += current_sample +                              \
    fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8))    \
 
 #define render_sample_right()                                                 \
-  sound_buffer[buffer_index + 1] += current_sample +                          \
+  sound_buffer_play_r[buffer_index] += current_sample +                          \
    fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8))    \
 
 #define render_sample_both()                                                  \
   dest_sample = current_sample +                                              \
    fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8));   \
-  sound_buffer[buffer_index] += dest_sample;                                  \
-  sound_buffer[buffer_index + 1] += dest_sample                               \
+  sound_buffer_play_l[buffer_index] += dest_sample;                                  \
+  sound_buffer_play_r[buffer_index] += dest_sample                               \
 
 #define render_samples(type)                                                  \
   while(fifo_fractional <= 0xFFFFFF)                                          \
   {                                                                           \
     render_sample_##type();                                                   \
     fifo_fractional += frequency_step;                                        \
-    buffer_index = (buffer_index + 2) % BUFFER_SIZE;                          \
+    buffer_index = (buffer_index + 1);                          \
   }                                                                           \
 
 void sound_timer(fixed8_24 frequency_step, u32 channel)
@@ -154,6 +157,12 @@ void sound_timer(fixed8_24 frequency_step, u32 channel)
     render_samples(null);
   }
 
+  if(buffer_index > 0x2000) //0x1000 works but kinda lags, 0x8000 and above have too much latency
+  {
+    if(channel == 1)
+      sound_callback(sound_buffer_play_l, sound_buffer_play_r, buffer_index);
+    buffer_index = 0;
+  }
   ds->buffer_index = buffer_index;
   ds->fifo_fractional = fp8_24_fractional_part(fifo_fractional);
 
@@ -238,6 +247,8 @@ u32 gbc_sound_partial_ticks = 0;
 u32 gbc_sound_master_volume_left;
 u32 gbc_sound_master_volume_right;
 u32 gbc_sound_master_volume;
+
+u32 last_buffer_index;
 
 #define update_volume_channel_envelope(channel)                               \
   volume_##channel = gbc_sound_envelope_volume_table[envelope_volume] *       \
@@ -338,10 +349,10 @@ u32 gbc_sound_master_volume;
   }                                                                           \
 
 #define gbc_sound_render_sample_right()                                       \
-  sound_buffer[buffer_index + 1] += (current_sample * volume_right) >> 22     \
+  sound_buffer_play_r[buffer_index/2] += (current_sample * volume_right) >> 22     \
 
 #define gbc_sound_render_sample_left()                                        \
-  sound_buffer[buffer_index] += (current_sample * volume_left) >> 22          \
+  sound_buffer_play_l[buffer_index/2] += (current_sample * volume_left) >> 22          \
 
 #define gbc_sound_render_sample_both()                                        \
   gbc_sound_render_sample_right();                                            \
@@ -569,88 +580,57 @@ void update_gbc_sound(u32 cpu_ticks)
   gbc_sound_buffer_index =
    (gbc_sound_buffer_index + (buffer_ticks * 2)) % BUFFER_SIZE;
 
+  last_buffer_index = buffer_index;
+
   //SDL_UnlockMutex(sound_mutex);
 
   //SDL_CondSignal(sound_cv);
 }
 
-#define sound_copy_normal()                                                   \
-  current_sample = source[i]                                                  \
 
-#define sound_copy(source_offset, length, render_type)                        \
-  _length = (length) / 2;                                                     \
-  source = (s16 *)(sound_buffer + source_offset);                             \
-  for(i = 0; i < _length; i++)                                                \
-  {                                                                           \
-    sound_copy_##render_type();                                               \
-    if(current_sample > 2047)                                                 \
-      current_sample = 2047;                                                  \
-    if(current_sample < -2048)                                                \
-      current_sample = -2048;                                                 \
-                                                                              \
-    stream_base[i] = current_sample << 4;                                     \
-    source[i] = 0;                                                            \
-  }                                                                           \
-
-#define sound_copy_null(source_offset, length)                                \
-  _length = (length) / 2;                                                     \
-  source = (s16 *)(sound_buffer + source_offset);                             \
-  for(i = 0; i < _length; i++)                                                \
-  {                                                                           \
-    stream_base[i] = 0;                                                       \
-    source[i] = 0;                                                            \
-  }                                                                           \
-
-
-void sound_callback(void *userdata, u8 *stream, int length)
+void sound_callback(u8 *streamL, u8 *streamR, int length)
 {
   u32 sample_length = length / 2;
   u32 _length;
   u32 i;
-  s16 *stream_base = (s16 *)stream;
+  u32 j;
+  s16 *stream_base_l = (s16 *)streamL;
+  s16 *stream_base_r = (s16 *)streamR;
   s16 *source;
   s32 current_sample;
+  u32 copied_bytes = 0;
 
-  //SDL_LockMutex(sound_mutex);
-
-  while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) <
-   length && !sound_exit_flag)
-  {
-    //SDL_CondWait(sound_cv, sound_mutex);
-  }
+  gbc_sound_buffer_index = 0;
 
   if(global_enable_audio)
   {
-    if((sound_buffer_base + sample_length) >= BUFFER_SIZE)
+    for(i = 0; i < length; i++)
     {
-      u32 partial_length = (BUFFER_SIZE - sound_buffer_base) * 2;
-      sound_copy(sound_buffer_base, partial_length, normal);
-      source = (s16 *)sound_buffer;
-      sound_copy(0, length - partial_length, normal);
-      sound_buffer_base = (length - partial_length) / 2;
+      current_sample = sound_buffer_play_l[i];
+      if(current_sample > 2047)
+        current_sample = 2047;
+      if(current_sample < -2048)
+        current_sample = -2048;
+
+      sound_buffer_l[i] = current_sample << 4;
+      sound_buffer_play_l[i] = 0;
     }
-    else
+
+    for(i = 0; i < length; i++)
     {
-      sound_copy(sound_buffer_base, length, normal);
-      sound_buffer_base += sample_length;
-    }
-  }
-  else
-  {
-    if((sound_buffer_base + sample_length) >= BUFFER_SIZE)
-    {
-      u32 partial_length = (BUFFER_SIZE - sound_buffer_base) * 2;
-      sound_copy_null(sound_buffer_base, partial_length);
-      source = (s16 *)sound_buffer;
-      sound_copy(0, length - partial_length, normal);
-      sound_buffer_base = (length - partial_length) / 2;
-    }
-    else
-    {
-      sound_copy_null(sound_buffer_base, length);
-      sound_buffer_base += sample_length;
+      current_sample = sound_buffer_play_r[i];
+      if(current_sample > 2047)
+        current_sample = 2047;
+      if(current_sample < -2048)
+        current_sample = -2048;
+
+      sound_buffer_r[i] = current_sample << 4;
+      sound_buffer_play_r[i] = 0;
     }
   }
+  sound_buffer_base = 0;
+
+  CSND_playsound(0x8, CSND_LOOP_DISABLE, CSND_ENCODING_PCM16, sound_frequency, (u32*)sound_buffer_l, (u32*)sound_buffer_r, length*2, 2, 1);
 
   //SDL_CondSignal(sound_cv);
 
@@ -701,7 +681,10 @@ void reset_sound()
   sound_on = 0;
   sound_buffer_base = 0;
   sound_last_cpu_ticks = 0;
-  memset(sound_buffer, 0, sizeof(sound_buffer));
+  memset(sound_buffer_l, 0, sizeof(sound_buffer_l));
+  memset(sound_buffer_r, 0, sizeof(sound_buffer_r));
+  memset(sound_buffer_play_l, 0, sizeof(sound_buffer_play_l));
+  memset(sound_buffer_play_r, 0, sizeof(sound_buffer_play_r));
 
   for(i = 0; i < 2; i++, ds++)
   {
@@ -735,6 +718,10 @@ void reset_sound()
 
 void sound_exit()
 {
+  linearFree(sound_buffer_l);
+  linearFree(sound_buffer_r);
+  linearFree(sound_buffer_play_l);
+  linearFree(sound_buffer_play_r);
   gbc_sound_buffer_index =
    (sound_buffer_base + audio_buffer_size) % BUFFER_SIZE;
   //SDL_PauseAudio(1);
@@ -751,7 +738,10 @@ void sound_exit()
 void init_sound(int need_reset)
 {
   //SDL_AudioSpec sound_settings;
-
+  sound_buffer_l = linearAlloc(BUFFER_SIZE*2);
+  sound_buffer_r = linearAlloc(BUFFER_SIZE*2);
+  sound_buffer_play_l = linearAlloc(BUFFER_SIZE*2);
+  sound_buffer_play_r = linearAlloc(BUFFER_SIZE*2);
   sound_exit_flag = 0;
 #ifdef PSP_BUILD
   audio_buffer_size = (audio_buffer_size_number * 1024) + 3072;

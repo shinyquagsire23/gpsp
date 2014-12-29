@@ -19,15 +19,6 @@
 
 #include "common.h"
 
-#ifdef PSP_BUILD
-
-//PSP_MODULE_INFO("gpSP", 0x1000, 0, 6);
-//PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
-
-void vblank_interrupt_handler(u32 sub, u32 *parg);
-
-#endif
-
 timer_type timer[4];
 
 //debug_state current_debug_state = COUNTDOWN_BREAKPOINT;
@@ -38,13 +29,8 @@ debug_state current_debug_state = RUN;
 
 //u32 breakpoint_value = 0;
 
-#ifdef RPI_BUILD
-frameskip_type current_frameskip_type = auto_frameskip; //manual; //auto_frameskip;
-u32 global_cycles_per_instruction = 1;
-#else
 frameskip_type current_frameskip_type = auto_frameskip;
 u32 global_cycles_per_instruction = 1;
-#endif
 
 
 #ifdef GP2X_BUILD
@@ -593,18 +579,6 @@ u32 update_gba()
           dispstat &= ~0x01;
           frame_ticks++;
 
-  #ifdef PC_BUILD
-/*        printf("frame update (%x), %d instructions total, %d RAM flushes\n",
-           reg[REG_PC], instruction_count - last_frame, flush_ram_count);
-          last_frame = instruction_count;
-*/
-/*          printf("%d gbc audio updates\n", gbc_update_count);
-          printf("%d oam updates\n", oam_update_count); */
-          gbc_update_count = 0;
-          oam_update_count = 0;
-          flush_ram_count = 0;
-  #endif
-
           if(update_input())
             continue;
 
@@ -631,6 +605,7 @@ u32 update_gba()
 				screen_offset[((160-j)+(i*240)) + y_offs + (x_offs * 240)] = screen_buffer[i+(j*240*2)];
 			}
 		}
+		//memcpy(screen_offset, screen_buffer, 240*160*4);
           update_screen();
 
           synchronize();
