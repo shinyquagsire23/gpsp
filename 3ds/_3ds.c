@@ -296,9 +296,9 @@ int main(int argv, char** argc)
 
   	trigger_ext_event();
 	
-	//if(has_ninjhax)
+	if(has_ninjhax)
   		execute_arm_translate(execute_cycles); //ninjhax dynrec
-  	//execute_arm(execute_cycles);
+  	execute_arm(execute_cycles);
 
 
 
