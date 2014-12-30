@@ -96,6 +96,7 @@ void gpsp_plat_init(void)
 	gfxWriteFramebufferInfo(GFX_BOTTOM);
 
 	fsInit();
+	sdmcInit();
 	sdmcArchive = (FS_archive){0x9, (FS_path){PATH_EMPTY, 1, (u8*)""}};
 	FSUSER_OpenArchive(NULL, &sdmcArchive);
 
@@ -142,6 +143,7 @@ void ninjhax_handlememory()
 void gpsp_plat_quit(void)
 {
 	  	// Exit services
+	sdmcExit();
 	fsExit();
 	CSND_shutdown();
  	hbExit();
@@ -178,7 +180,7 @@ int main(int argv, char** argc)
 	getcwd(main_path, 512);
 
 	gpsp_plat_init();
-	//load_config_file();
+	load_config_file();
 
 	gamepak_filename[0] = 0;
 
