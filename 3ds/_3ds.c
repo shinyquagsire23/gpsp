@@ -81,7 +81,7 @@ void gpsp_plat_init(void)
 	srvInit();			// mandatory
 	aptInit();			// mandatory
 	hidInit(NULL);	// input (buttons, screen)
-	gfxInit();			// graphics
+	gfxInitDefault();			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
 	has_sound = !CSND_initialize(NULL);
 
