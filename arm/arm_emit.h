@@ -666,8 +666,6 @@ u8 *last_bios_translation_ptr = bios_translation_cache;
 #define translate_invalidate_dcache_one(which)                                \
    if (which##_translation_ptr > last_##which##_translation_ptr)               \
    {                                                                           \
-    GSPGPU_FlushDataCache(NULL,last_##which##_translation_ptr,                 \
-      which##_translation_ptr - last_##which##_translation_ptr);               \
     GSPGPU_InvalidateDataCache(NULL,last_##which##_translation_ptr, 32);       \
     last_##which##_translation_ptr = which##_translation_ptr;                  \
    } 
