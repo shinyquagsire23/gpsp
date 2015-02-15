@@ -84,6 +84,7 @@ void gpsp_plat_init(void)
 	gfxInitDefault();			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
 	has_sound = !CSND_initialize(NULL);
+	APT_SetAppCpuTimeLimit(NULL, 80);
 
 	if(has_ninjhax)
 		ninjhax_handlememory();
