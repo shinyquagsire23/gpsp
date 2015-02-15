@@ -630,7 +630,8 @@ void sound_callback(u8 *streamL, u8 *streamR, int length)
   }
   sound_buffer_base = 0;
 
-  CSND_playsound(0x8, CSND_LOOP_DISABLE, CSND_ENCODING_PCM16, sound_frequency, (u32*)sound_buffer_l, (u32*)sound_buffer_r, length*2, 2, 1);
+  if(has_sound)
+    CSND_playsound(0x8, CSND_LOOP_DISABLE, CSND_ENCODING_PCM16, sound_frequency, (u32*)sound_buffer_l, (u32*)sound_buffer_r, length*2, 2, 1);
 
   //SDL_CondSignal(sound_cv);
 
