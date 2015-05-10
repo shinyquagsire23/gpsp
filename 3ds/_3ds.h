@@ -57,6 +57,12 @@ extern u32 return_place;
 
 extern u16 *screen_buffer;
 
+void InvalidateEntireInstructionCache(void);
+void InvalidateEntireDataCache(void);
+int PatchKernel(void);
+
+int svcFlushIcache(void);
+
 #define MAX_FILENAME_LEN 256
 
 //extern char *file_ext[];

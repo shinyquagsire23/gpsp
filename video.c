@@ -3219,7 +3219,7 @@ void update_screen()
 	//clearScreen(screenTopLeft, GFX_TOP,16,32,80); 
 	char pcBuff[256];
 	sprintf(pcBuff, "PC: %08x", reg[REG_PC]);
-	print_string(pcBuff, 0xFFFF, 0x0, 0, 0);
+	//print_string(pcBuff, 0xFFFF, 0x0, 0, 0);
 	gfxFlushBuffers();
 	gfxSwapBuffers();	
 //if(!skip_next_frame)

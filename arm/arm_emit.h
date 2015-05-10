@@ -678,7 +678,7 @@ u8 *last_bios_translation_ptr = bios_translation_cache;
 }
 
 #define invalidate_icache_region(addr, size)                                  \
-   HB_FlushInvalidateCache();\
+   svcFlushIcache();\
 
 
 #define block_prologue_size 0

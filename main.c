@@ -396,7 +396,7 @@ void trigger_ext_event()
      new_ticks - benchmark_ticks[event_number - 1];
   }
 
-  current_frameskip_type = no_frameskip;
+  current_frameskip_type = auto_frameskip;
   no_alpha = 0;
   synchronize_flag = 0;
 
@@ -584,7 +584,7 @@ u32 update_gba()
 
           update_gbc_sound(cpu_ticks);
 
-          //if(fps_debug)
+          if(fps_debug)
           {
             char print_buffer[32];
             sprintf(print_buffer, "%2d (%2d)", fps, frames_drawn);

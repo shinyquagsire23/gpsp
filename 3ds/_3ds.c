@@ -83,7 +83,7 @@ void gpsp_plat_init(void)
 	hidInit(NULL);	// input (buttons, screen)
 	gfxInitDefault();			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
-	has_sound = !CSND_initialize(NULL);
+	has_sound = !csndInit();
 	APT_SetAppCpuTimeLimit(NULL, 80);
 
 	if(has_ninjhax)
@@ -110,6 +110,67 @@ void gpsp_plat_init(void)
 	gspWaitForVBlank(); //wait to let the app register itself
 }
 
+u32 start = 0xDFF82200;
+u32 length = 0xB00;
+int count;
+u32 patchoffset = 0;
+u32 destfunc = 0;
+int get_version_specific_addresses()
+{
+	// get proper patch address for our kernel -- thanks yifanlu once again
+	u32 kversion = *(vu32*)0x1FF80000; // KERNEL_VERSION register
+
+	patchoffset = 0;
+
+	u8 isN3DS = 0;
+	APT_CheckNew3DS(NULL, &isN3DS);
+
+	if(!isN3DS || kversion < 0x022C0600)
+	{
+		switch (kversion)
+		{
+			case 0x02220000: // 2.34-0 4.1.0
+				patchoffset = 0xEFF827CC + 0xA0;
+				break;
+			case 0x02230600: // 2.35-6 5.0.0
+				patchoffset = 0xEFF822A8 + 0xA0;
+				break;
+			case 0x02240000: // 2.36-0 5.1.0
+			case 0x02250000: // 2.37-0 6.0.0
+			case 0x02260000: // 2.38-0 6.1.0
+				patchoffset = 0xEFF822A4 + 0xA0;
+				break;
+			case 0x02270400: // 2.39-4 7.0.0
+				patchoffset = 0xEFF822A8 + 0xA0;
+				break;
+			case 0x02280000: // 2.40-0 7.2.0
+				patchoffset = 0xEFF822A4 + 0xA0;
+				break;
+			case 0x022C0600: // 2.44-6 8.0.0
+				patchoffset = 0xDFF82294 + 0xA0;
+				break;
+			case 0x022E0000: // 2.26-0 9.0.0
+				patchoffset = 0xDFF82290 + 0xA0;
+				break;
+			default:
+				return 0;
+		}
+	}
+	else
+	{
+		switch (kversion)
+		{
+			case 0x022C0600: // N3DS 2.44-6 8.0.0
+			case 0x022E0000: // N3DS 2.26-0 9.0.0
+				patchoffset = 0xDFF82260 + 0xA0;
+				break;
+			default:
+				return 0;
+		}
+	}
+	return 1;
+}
+
 /*
 	u32* test = memalign(0x1000, 0x10000);
 
@@ -119,9 +180,11 @@ void gpsp_plat_init(void)
 	void (*test7_func)(char* str, void* printaddr) = test;
 	test7_func("test7 success\n", (void*)&printf);
 */
-
+void invalidate_icache_kern (void);
+int svcRunKernel(int (*func)(void));
 void ninjhax_handlememory()
 {
+	get_version_specific_addresses();
 	int result = 0;
 
 	HB_ReprotectMemory(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
@@ -132,7 +195,8 @@ void ninjhax_handlememory()
 	*((u32*)rom_translation_cache) = 0xE12FFF11; //bx r1
 	*((u32*)ram_translation_cache) = 0xE12FFF11; //bx r1
 	*((u32*)bios_translation_cache) = 0xE12FFF11; //bx r1
-	HB_FlushInvalidateCache();
+	//svcFlushIcache();
+	svcRunKernel(PatchKernel);
 	void (*test_func)(char* str, void* printaddr) = rom_translation_cache;
 	test_func("success", (void*)&printf);
 	void (*test_func2)(char* str, void* printaddr) = ram_translation_cache;
@@ -146,7 +210,7 @@ void gpsp_plat_quit(void)
 	  	// Exit services
 	sdmcExit();
 	fsExit();
-	CSND_shutdown();
+	csndExit();
  	hbExit();
 	gfxExit();
 	hidExit();
@@ -166,6 +230,72 @@ void fb_wait_vsync(void)
 void fb_set_mode(int w, int h, int buffers, int scale,int filter, int filter2)
 {
 	  
+}
+
+
+/*int __attribute__((naked)) PatchKernel()
+{
+	__asm__ volatile("cpsid aif");
+
+	// Invalidates the entire instruction cache.
+	__asm__ volatile(
+		"mov r0, #0\n\t"
+		"mcr p15, 0, r0, c7, c5, 0\n\t");
+
+	// Invalidates the entire data cache.
+	__asm__ volatile(
+		"mov r0, #0\n\t"
+		"mcr p15, 0, r0, c7, c10, 0\n\t");
+
+	__asm__ volatile(
+		"mov r0, #0\n\t"
+		"bx lr\n\t");
+}*/
+
+int __attribute__((naked)) PatchKernel()
+{
+	__asm__ volatile("cpsid aif");
+
+	//Try to search for offset
+	/*for(count = 0; count < length; count += 4)
+	{
+		if(*(u32*)(start + count) == 0xE5DDE030 && *(u32*)(start + count + 4) == 0xEAFFFFEF)
+		{
+			patchoffset = start + count + 8;
+			break;
+		}
+	}*/
+
+	//Current offset for N3DS 8.1-9.2
+	if(patchoffset == 0)
+		patchoffset = 0xDFF82300;
+
+	//Patch 0x2F-0x31 to point to same function to make room
+	u32 nopfunc = *(u32*)(patchoffset + (0x31*4));
+	*(u32*)(patchoffset + (0x2F*4)) = nopfunc;
+	*(u32*)(patchoffset + (0x30*4)) = nopfunc;
+
+	//Patch 0x2E
+	destfunc = (*(u32*)(patchoffset + (0x2E*4))) - 0xFFF00000 + 0xDFF80000;
+	*(u32*)(destfunc + 0x0) = 0xE3A00000;
+	*(u32*)(destfunc + 0x4) = 0xEE070F15;
+	*(u32*)(destfunc + 0x8) = 0xE3A00000;
+	*(u32*)(destfunc + 0xC) = 0xEE070F1A;
+	/**(u32*)(destfunc + 0x10) = 0xE12FFF1E;*/ //Crashes for no reason
+
+	// Invalidates the entire instruction cache.
+	__asm__ volatile(
+		"mov r0, #0\n\t"
+		"mcr p15, 0, r0, c7, c5, 0\n\t");
+
+	// Invalidates the entire data cache.
+	__asm__ volatile(
+		"mov r0, #0\n\t"
+		"mcr p15, 0, r0, c7, c10, 0\n\t");
+
+	__asm__ volatile(
+		"mov r0, #0\n\t"
+		"bx lr\n\t");
 }
 
 #define color16(red, green, blue)                                             \
