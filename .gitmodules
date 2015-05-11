@@ -1,0 +1,3 @@
+[submodule "3ds/libkhax"]
+	path = 3ds/libkhax
+	url = https://github.com/Myriachan/libkhax.git

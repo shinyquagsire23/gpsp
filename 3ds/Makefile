@@ -28,7 +28,7 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		      :=	$(notdir $(CURDIR))
 BUILD		        :=	build
-SOURCES		      := .. ../arm .
+SOURCES		      := .. ../arm . libkhax
 DATA		        :=	data
 INCLUDES	      :=	include
 APP_TITLE       :=  CitrAGB (gpsp)

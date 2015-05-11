@@ -83,11 +83,15 @@ void gpsp_plat_init(void)
 	hidInit(NULL);	// input (buttons, screen)
 	gfxInitDefault();			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
-	has_sound = !csndInit();
-	APT_SetAppCpuTimeLimit(NULL, 80);
 
 	if(has_ninjhax)
-		ninjhax_handlememory();
+	{
+		khaxInit();
+	}
+	do_memory_tests();
+
+	has_sound = !csndInit();
+	APT_SetAppCpuTimeLimit(NULL, 80);
 
 	gfxSetDoubleBuffering(GFX_TOP, 0);
 	gfxSetDoubleBuffering(GFX_BOTTOM, 0);
@@ -182,7 +186,7 @@ int get_version_specific_addresses()
 */
 void invalidate_icache_kern (void);
 int svcRunKernel(int (*func)(void));
-void ninjhax_handlememory()
+void do_memory_tests()
 {
 	get_version_specific_addresses();
 	int result = 0;
@@ -430,10 +434,8 @@ int main(int argv, char** argc)
 
   	trigger_ext_event();
 	
-	if(has_ninjhax)
-  		execute_arm_translate(execute_cycles); //ninjhax dynrec
-  	else
-		execute_arm(execute_cycles);
+  	execute_arm_translate(execute_cycles); //arm11 dynrec
+	//execute_arm(execute_cycles);
 
 
 
