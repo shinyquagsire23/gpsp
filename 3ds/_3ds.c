@@ -88,7 +88,7 @@ void gpsp_plat_init(void)
 	{
 		khaxInit();
 	}
-	do_memory_tests();
+	//do_memory_tests();
 
 	has_sound = !csndInit();
 	APT_SetAppCpuTimeLimit(NULL, 80);
@@ -118,6 +118,7 @@ u32 start = 0xDFF82200;
 u32 length = 0xB00;
 int count;
 u32 patchoffset = 0;
+u32 fcram_base = 0;
 u32 destfunc = 0;
 int get_version_specific_addresses()
 {
@@ -135,26 +136,33 @@ int get_version_specific_addresses()
 		{
 			case 0x02220000: // 2.34-0 4.1.0
 				patchoffset = 0xEFF827CC + 0xA0;
+				fcram_base = 0xEFF80000;
 				break;
 			case 0x02230600: // 2.35-6 5.0.0
 				patchoffset = 0xEFF822A8 + 0xA0;
+				fcram_base = 0xEFF80000;
 				break;
 			case 0x02240000: // 2.36-0 5.1.0
 			case 0x02250000: // 2.37-0 6.0.0
 			case 0x02260000: // 2.38-0 6.1.0
 				patchoffset = 0xEFF822A4 + 0xA0;
+				fcram_base = 0xEFF80000;
 				break;
 			case 0x02270400: // 2.39-4 7.0.0
 				patchoffset = 0xEFF822A8 + 0xA0;
+				fcram_base = 0xEFF80000;
 				break;
 			case 0x02280000: // 2.40-0 7.2.0
 				patchoffset = 0xEFF822A4 + 0xA0;
+				fcram_base = 0xEFF80000;
 				break;
 			case 0x022C0600: // 2.44-6 8.0.0
 				patchoffset = 0xDFF82294 + 0xA0;
+				fcram_base = 0xDFF80000;
 				break;
 			case 0x022E0000: // 2.26-0 9.0.0
 				patchoffset = 0xDFF82290 + 0xA0;
+				fcram_base = 0xDFF80000;
 				break;
 			default:
 				return 0;
@@ -167,6 +175,7 @@ int get_version_specific_addresses()
 			case 0x022C0600: // N3DS 2.44-6 8.0.0
 			case 0x022E0000: // N3DS 2.26-0 9.0.0
 				patchoffset = 0xDFF82260 + 0xA0;
+				fcram_base = 0xDFF80000;
 				break;
 			default:
 				return 0;
@@ -280,7 +289,7 @@ int __attribute__((naked)) PatchKernel()
 	*(u32*)(patchoffset + (0x30*4)) = nopfunc;
 
 	//Patch 0x2E
-	destfunc = (*(u32*)(patchoffset + (0x2E*4))) - 0xFFF00000 + 0xDFF80000;
+	destfunc = (*(u32*)(patchoffset + (0x2E*4))) - 0xFFF00000 + fcram_base;
 	*(u32*)(destfunc + 0x0) = 0xE3A00000;
 	*(u32*)(destfunc + 0x4) = 0xEE070F15;
 	*(u32*)(destfunc + 0x8) = 0xE3A00000;
