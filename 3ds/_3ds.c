@@ -88,7 +88,7 @@ void gpsp_plat_init(void)
 	{
 		khaxInit();
 	}
-	//do_memory_tests();
+	do_memory_tests();
 
 	has_sound = !csndInit();
 	APT_SetAppCpuTimeLimit(NULL, 80);
