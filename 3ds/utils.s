@@ -18,6 +18,12 @@ svcFlushIcache:
    svc 0x2E
    bx lr
 
+.global svcFlushDcache
+.type svcFlushDcache, %function
+svcFlushDcache:
+   svc 0x4B
+   bx lr
+
 .global svcRunKernel
 .type svcRunKernel, %function
 svcRunKernel:

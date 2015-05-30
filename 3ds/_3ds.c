@@ -5,10 +5,13 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include "font.h"
+#include "cache.h"
 #include "../common.h"
+#include "3ds_memory.h"
 
 char main_path[512];
 char *file_ext[] = { ".gba", ".bin", NULL };
+u32* flush_all = {0, 0xB, 0, 0, 0 };
 
 struct FileHandle {
     Handle handle;
@@ -209,9 +212,9 @@ void do_memory_tests()
 	get_version_specific_addresses();
 	int result = 0;
 
-	HB_ReprotectMemory(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
-	HB_ReprotectMemory(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
-	HB_ReprotectMemory(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
+	ReprotectMemory(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
+	ReprotectMemory(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
+	ReprotectMemory(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
 
 	//Test to see if we can run stuff
 	*((u32*)rom_translation_cache) = 0xE12FFF11; //bx r1
@@ -219,6 +222,7 @@ void do_memory_tests()
 	*((u32*)bios_translation_cache) = 0xE12FFF11; //bx r1
 	//svcFlushIcache();
 	svcRunKernel(PatchKernel);
+	//svcFlushIcache(flush_all, 0);
 	void (*test_func)(char* str, void* printaddr) = rom_translation_cache;
 	test_func("success", (void*)&printf);
 	void (*test_func2)(char* str, void* printaddr) = ram_translation_cache;
@@ -292,6 +296,8 @@ int PatchKernel()
 	if(patchoffset == 0)
 		patchoffset = 0xDFF82300;
 
+	//*(u32*)(patchoffset + (0x3F * 4)) = 0xFFF031A4;
+
 	//Patch 0x2F-0x31 to point to same function to make room
 	u32 nopfunc = *(u32*)(patchoffset + (0x31*4));
 	*(u32*)(patchoffset + (0x2F*4)) = nopfunc;
@@ -303,7 +309,7 @@ int PatchKernel()
 	*(u32*)(destfunc + 0x4) = 0xEE070F15;
 	*(u32*)(destfunc + 0x8) = 0xE3A00000;
 	*(u32*)(destfunc + 0xC) = 0xEE070F1A;
-	/**(u32*)(destfunc + 0x10) = 0xE12FFF1E;*/ //Crashes for no reason
+	/**(u32*)(destfunc + 0x10) = 0xE12FFF1E;*/ //Crashes for no reason*/
 
 	// Invalidates the entire instruction cache.
 	__asm__ volatile(

@@ -57,11 +57,14 @@ extern u32 return_place;
 
 extern u16 *screen_buffer;
 
+extern u32* flush_all;
+
 void InvalidateEntireInstructionCache(void);
 void InvalidateEntireDataCache(void);
 int PatchKernel(void);
 
-int svcFlushIcache(void);
+int svcFlushIcache(u32 offset, u32 length);
+int svcFlushDcache(u32 offset, u32 length);
 
 #define MAX_FILENAME_LEN 256
 
