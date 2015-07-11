@@ -298,7 +298,7 @@ s32 load_file(const char **wildcards, char *result)
       //flip_screen();
 
       print_string(current_dir_short, COLOR_ACTIVE_ITEM, COLOR_BG, 0, 0);
-      print_string(has_ninjhax ? "Dynrec" : "Interpret", COLOR_ACTIVE_ITEM, COLOR_BG, 0, 240-10);
+      print_string(has_kernel_hax ? "Dynrec" : "Interpret", COLOR_ACTIVE_ITEM, COLOR_BG, 0, 240-10);
 #if defined GP2X_BUILD
       print_string("Press X to return to the main menu.",
        COLOR_HELP_TEXT, COLOR_BG, 20, 220);

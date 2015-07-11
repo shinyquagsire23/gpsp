@@ -72,6 +72,7 @@ u32 synchronize_flag = 1;
 u32 update_backup_flag = 1;
 u8 exit_time = 0;
 u8 has_ninjhax = 0;
+u8 has_kernel_hax = 0;
 u8 has_sound = 0;
 u32 old_stack = 0;
 u32 return_place = 0;
@@ -84,14 +85,16 @@ void gpsp_plat_init(void)
 	srvInit();			// mandatory
 	aptInit();			// mandatory
 	hidInit(NULL);	// input (buttons, screen)
-	gfxInitDefault();			// graphics
+	gfxInit(GSP_RGB5_A1_OES,GSP_RGB5_A1_OES, false);			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
 
-	if(has_ninjhax)
+	if(osGetKernelVersion() < 0x02300000) //9.2 and below gets kernel hax, TODO: this probably isn't good for .cias
 	{
 		khaxInit();
+		do_memory_tests();
+		has_kernel_hax = true;
 	}
-	do_memory_tests();
+
 
 	has_sound = !csndInit();
 	APT_SetAppCpuTimeLimit(NULL, 80);
@@ -127,7 +130,7 @@ u32 destfunc = 0;
 int get_version_specific_addresses()
 {
 	// get proper patch address for our kernel -- thanks yifanlu once again
-	u32 kversion = *(vu32*)0x1FF80000; // KERNEL_VERSION register
+	u32 kversion = osGetKernelVersion(); // KERNEL_VERSION register
 
 	patchoffset = 0;
 
@@ -175,6 +178,21 @@ int get_version_specific_addresses()
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
+			case 0x02300000: // 9.3.0
+				patchoffset = 0xDFF8228C + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
+			case 0x02310000: // 9.5.0
+				patchoffset = 0xDFF82288 + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
+			case 0x02320000: // 9.6.0
+				patchoffset = 0xDFF82284 + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
 			default:
 				return 0;
 		}
@@ -186,6 +204,21 @@ int get_version_specific_addresses()
 			case 0x022C0600: // N3DS 2.44-6 8.0.0
 			case 0x022E0000: // N3DS 2.26-0 9.0.0
 				patchoffset = 0xDFF82260 + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
+			case 0x02300000: // N3DS 9.3.0
+				patchoffset = 0xDFF82270 + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
+			case 0x02310000: // N3DS 9.5.0
+				patchoffset = 0xDFF8226C + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
+			case 0x02320000: // N3DS 9.6.0
+				patchoffset = 0xDFF82268 + 0xA0;
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
@@ -358,7 +391,7 @@ int main(int argv, char** argc)
 
 		/* Clear Screen */
 		clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
-		clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
+		clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10));
 	  	char* errorMsg[256];
 		sprintf(errorMsg, "                                                      \nSorry, but gpSP requires a Gameboy Advance BIOS       \nimage to run correctly. Make sure to get an           \nauthentic one, it'll be exactly 16384 bytes large     \nand should have the following md5sum value:           \n                                                      \na860e8c0b6d573d191e4ec7db1b1e4f6                      \n                                                      \nWhen you do get it name it gba_bios.bin and put it    \nin sdmc:/gba/ .                                       \n                                                      \nPress any button to exit.                             ");
 
@@ -456,8 +489,10 @@ int main(int argv, char** argc)
 
   	trigger_ext_event();
 	
-  	execute_arm_translate(execute_cycles); //arm11 dynrec
-	//execute_arm(execute_cycles);
+	if(has_kernel_hax)
+  	    execute_arm_translate(execute_cycles); //arm11 dynrec
+  	else
+	    execute_arm(execute_cycles);
 
 
 

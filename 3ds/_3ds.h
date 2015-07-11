@@ -51,6 +51,7 @@ extern u32 update_backup_flag;
 
 extern u8 exit_time;
 extern u8 has_ninjhax;
+extern u8 has_kernel_hax;
 extern u8 has_sound;
 extern u32 old_stack;
 extern u32 return_place;

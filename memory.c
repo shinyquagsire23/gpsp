@@ -2192,7 +2192,6 @@ s32 load_bios(char *name)
   u64 size = 0;
   int result = 0;
   utilLoad(name, &size);
-  HB_ReprotectMemory(bios_rom, 8, 7, &result);
 
   if(size == 0)
 	return -1;

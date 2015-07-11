@@ -32,10 +32,15 @@ SOURCES_NO_CPP	 := .. ../arm .
 SOURCES_CPP      := .. ../arm . libkhax
 DATA		        :=	data
 INCLUDES	      :=	include
-APP_TITLE       :=  CitrAGB (gpsp)
-APP_DESCRIPTION :=  3DS GBA Emulator
-APP_AUTHOR      :=  Shiny Quagsire
-ICON            :=  logo.png
+
+include $(TOPDIR)/resources/AppInfo
+
+APP_TITLE := $(shell echo "$(APP_TITLE)" | cut -c1-128)
+APP_DESCRIPTION := $(shell echo "$(APP_DESCRIPTION)" | cut -c1-256)
+APP_AUTHOR := $(shell echo "$(APP_AUTHOR)" | cut -c1-128)
+APP_PRODUCT_CODE := $(shell echo $(APP_PRODUCT_CODE) | cut -c1-16)
+APP_UNIQUE_ID := $(shell echo $(APP_UNIQUE_ID) | cut -c1-7)
+ICON            :=  resources/icon.png
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -54,6 +59,21 @@ ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= -lctru -lm
+
+ifeq ($(OS),Windows_NT)
+	MAKEROM = $(TOPDIR)/tools/makerom.exe
+	BANNERTOOL = $(TOPDIR)/tools/bannertool.exe
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		MAKEROM = $(TOPDIR)/tools/makerom-linux
+		BANNERTOOL = $(TOPDIR)/tools/bannertool-linux
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		MAKEROM = $(TOPDIR)/tools/makerom-mac
+		BANNERTOOL = $(TOPDIR)/tools/bannertool-mac
+	endif
+endif
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -144,11 +164,31 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 ifeq ($(strip $(NO_SMDH)),)
 .PHONY: all
-all	:	$(OUTPUT).3dsx $(OUTPUT).smdh
+all	:	$(OUTPUT).3dsx $(OUTPUT).smdh $(OUTPUT).cia
 endif
 cpu.o cpu_threaded.o: CFLAGS += -Wno-unused-variable -Wno-unused-label
 $(OUTPUT).3dsx	:	$(OUTPUT).elf
 $(OUTPUT).elf	:	$(OFILES)
+
+banner.bnr: $(TOPDIR)/resources/banner.png $(TOPDIR)/resources/audio.wav
+	$(BANNERTOOL) makebanner -i $(TOPDIR)/resources/banner.png -a $(TOPDIR)/resources/audio.wav -o banner.bnr
+
+icon.icn: $(TOPDIR)/resources/icon.png
+	$(BANNERTOOL) makesmdh -s "$(APP_TITLE)" -l "$(APP_TITLE)" -p "$(APP_AUTHOR)" -i $(TOPDIR)/resources/icon.png -o icon.icn
+
+ds.rsf:
+	cat $(TOPDIR)/tools/template-3ds.rsf | sed 's/{APP_TITLE}/$(APP_TITLE)/' | sed 's/{APP_PRODUCT_CODE}/$(APP_PRODUCT_CODE)/' | sed 's/{APP_UNIQUE_ID}/$(APP_UNIQUE_ID)/' > 3ds.rsf
+	
+cia.rsf:
+	cat $(TOPDIR)/tools/template-cia.rsf | sed 's/{APP_TITLE}/$(APP_TITLE)/' | sed 's/{APP_PRODUCT_CODE}/$(APP_PRODUCT_CODE)/' | sed 's/{APP_UNIQUE_ID}/$(APP_UNIQUE_ID)/' > cia.rsf
+
+stripped.elf: $(OUTPUT).elf
+	@cp $(OUTPUT).elf stripped.elf
+	@$(PREFIX)strip stripped.elf
+
+$(OUTPUT).cia: stripped.elf banner.bnr icon.icn cia.rsf
+	$(MAKEROM) -f cia -o $(OUTPUT).cia -rsf cia.rsf -target t -exefslogo -elf stripped.elf -icon icon.icn -banner banner.bnr
+	@echo "built ... $(notdir $@)"
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
