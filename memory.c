@@ -2117,15 +2117,44 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
 
 s32 load_gamepak_raw(char *name)
 {
-  char fileName[256];
-  u64 size = -1;
+  file_open(gamepak_file, name, read);
 
-  sprintf(fileName, "/%s", name);
+  if(file_check_valid(gamepak_file))
+  {
+    u32 file_size = file_length(name, gamepak_file);
 
-  gamepak_rom = utilLoad_Size(fileName, &size, 0x1000000);
-  if(size == -1)
-	return -1;
-  return (s32)(size & 0x7FFFFFFF);
+    // First, close the last one if it was open, we won't
+    // be needing it anymore.
+    if(file_check_valid(gamepak_file_large))
+      file_close(gamepak_file_large);
+
+    // If it's a big file size keep it, don't close it, we'll
+    // probably want to load from it more later.
+    if(file_size <= gamepak_ram_buffer_size)
+    {
+      gamepak_rom = linearAlloc(file_size);
+      file_read(gamepak_file, gamepak_rom, file_size);
+
+      file_close(gamepak_file);
+
+#ifdef PSP_BUILD
+      gamepak_file_large = -1;
+#else
+      gamepak_file_large = NULL;
+#endif
+    }
+    else
+    {
+      // Read in just enough for the header
+      gamepak_rom = linearAlloc(file_size);
+      file_read(gamepak_file, gamepak_rom, 0x100);
+      gamepak_file_large = gamepak_file;
+    }
+
+    return file_size;
+  }
+
+  return -1;
 }
 
 char gamepak_title[13];

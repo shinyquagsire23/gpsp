@@ -1147,13 +1147,16 @@ gui_action_type get_gui_input()
         gui_action = CURSOR_RIGHT;
     break;
 
-    case BUTTON_ID_START:
     case BUTTON_ID_A:
        gui_action = CURSOR_SELECT;
     break;
 
     case BUTTON_ID_MENU:
     case BUTTON_ID_B:
+       gui_action = CURSOR_BACK;
+    break;
+    
+    case BUTTON_ID_START: //X
        gui_action = CURSOR_EXIT;
     break;
 

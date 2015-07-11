@@ -445,7 +445,9 @@ int main(int argv, char** argc)
 	//switch_to_romdir();
 	if(load_file(file_ext, load_filename) == -1)
 	{
-	  menu(copy_screen());
+	  //menu(copy_screen());
+	  gpsp_plat_quit();
+	  return 0;
 	}
 	else
 	{
