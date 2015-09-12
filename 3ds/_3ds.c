@@ -192,9 +192,13 @@ int get_version_specific_addresses()
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
-			case 0x02320100: // 9.6.0, and hopefully anything later
-			default:
+			case 0x02320100: // 9.6.0
 				patchoffset = 0xDFF82284 + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
+			default: // 10.0.0, and hopefully anything later
+				patchoffset = 0xDFF8228C + 0xA0;
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
@@ -220,12 +224,16 @@ int get_version_specific_addresses()
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
-			case 0x02320100: // N3DS 9.6.0, and hopefully anything later
-			default:
+			case 0x02320100: // N3DS 9.6.0, offsets untested
 				patchoffset = 0xDFF82268 + 0xA0;
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 			    break;
+			default: //N3DS 10.0.0 and hopefully anything later, offsets untested
+				patchoffset = 0xDFF82270 + 0xA0;
+				fcram_base = 0xDFF80000;
+				kernel_virtual = 0xFFF00000;
+				break;
 		}
 	}
 	return 1;
