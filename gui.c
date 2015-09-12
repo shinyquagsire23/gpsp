@@ -316,7 +316,9 @@ s32 load_file(const char **wildcards, char *result)
       screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
 
       print_string(current_dir_short, COLOR_ACTIVE_ITEM, COLOR_BG, 0, 0);
-      print_string(has_kernel_hax ? "Dynrec" : "Interpret", COLOR_ACTIVE_ITEM, COLOR_BG, 0, 240-10);
+      char info[0x10];
+      sprintf(info, "%s (kver:%08x)", has_kernel_hax ? "Dynrec" : "Interpret", osGetKernelVersion());
+      print_string(info, COLOR_ACTIVE_ITEM, COLOR_BG, 0, 240-10);
 #if defined GP2X_BUILD
       print_string("Press X to return to the main menu.",
        COLOR_HELP_TEXT, COLOR_BG, 20, 220);
