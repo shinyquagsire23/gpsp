@@ -253,6 +253,7 @@ int svcRunKernel(int (*func)(void));
 void do_memory_tests()
 {
 	get_version_specific_addresses();
+	svcRunKernel(PatchKernel);
 	int result = 0;
 
 	ReprotectMemory(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE / 4096, 7, &result);
@@ -263,9 +264,7 @@ void do_memory_tests()
 	*((u32*)rom_translation_cache) = 0xE12FFF11; //bx r1
 	*((u32*)ram_translation_cache) = 0xE12FFF11; //bx r1
 	*((u32*)bios_translation_cache) = 0xE12FFF11; //bx r1
-	//svcFlushIcache();
-	svcRunKernel(PatchKernel);
-	//svcFlushIcache(flush_all, 0);
+
 	void (*test_func)(char* str, void* printaddr) = rom_translation_cache;
 	test_func("success", (void*)&printf);
 	void (*test_func2)(char* str, void* printaddr) = ram_translation_cache;
@@ -335,11 +334,12 @@ int PatchKernel()
 		}
 	}*/
 
-	//Current offset for N3DS 8.1-9.2
-	if(patchoffset == 0)
-		patchoffset = 0xDFF82300;
-
-	//*(u32*)(patchoffset + (0x3F * 4)) = 0xFFF031A4;
+    //Patch access to all SVCs
+	if (patchoffset > 0)
+	{
+		*(vu32*)(patchoffset) = 0xE320F000; // NOP
+		*(vu32*)(patchoffset + 8) = 0xE320F000; // NOP
+	}
 
 	//Patch 0x2F-0x31 to point to same function to make room
 	u32 nopfunc = *(u32*)(patchoffset + (0x31*4));
