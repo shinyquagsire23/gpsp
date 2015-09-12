@@ -90,7 +90,7 @@ void gpsp_plat_init(void)
 	gfxInit(GSP_RGB5_A1_OES,GSP_RGB5_A1_OES, false);			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
 
-	if(osGetKernelVersion() < 0x02300000 || !__service_ptr) //9.2 and below gets kernel hax for 3dsx, all .cia gets dynrec
+	if((osGetKernelVersion() < 0x02300000 && has_ninjhax) || !__service_ptr) //9.2 and below gets kernel hax for 3dsx, all .cia gets dynrec
 	{
 	    if(osGetKernelVersion() < 0x02300000)
 		    khaxInit();
