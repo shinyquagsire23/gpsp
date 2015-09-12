@@ -64,8 +64,8 @@ void InvalidateEntireInstructionCache(void);
 void InvalidateEntireDataCache(void);
 int PatchKernel(void);
 
-int svcFlushIcache(u32 offset, u32 length);
-int svcFlushDcache(u32 offset, u32 length);
+int svcFlushIcache();
+int svcFlushDcache();
 
 #define MAX_FILENAME_LEN 256
 

@@ -264,7 +264,7 @@ void do_memory_tests()
 	*((u32*)rom_translation_cache) = 0xE12FFF11; //bx r1
 	*((u32*)ram_translation_cache) = 0xE12FFF11; //bx r1
 	*((u32*)bios_translation_cache) = 0xE12FFF11; //bx r1
-
+    svcFlushIcache();
 	void (*test_func)(char* str, void* printaddr) = rom_translation_cache;
 	test_func("success", (void*)&printf);
 	void (*test_func2)(char* str, void* printaddr) = ram_translation_cache;
