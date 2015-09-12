@@ -77,6 +77,8 @@ u8 has_sound = 0;
 u32 old_stack = 0;
 u32 return_place = 0;
 
+extern void* __service_ptr; // used to detect if we're run from a homebrew launcher
+
 u16 *screen_buffer;
 
 void gpsp_plat_init(void)
