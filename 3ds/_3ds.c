@@ -88,9 +88,11 @@ void gpsp_plat_init(void)
 	gfxInit(GSP_RGB5_A1_OES,GSP_RGB5_A1_OES, false);			// graphics
 	has_ninjhax = !hbInit();			//ninjhax magics	
 
-	if(osGetKernelVersion() < 0x02300000) //9.2 and below gets kernel hax, TODO: this probably isn't good for .cias
+	if(osGetKernelVersion() < 0x02300000 || !__service_ptr) //9.2 and below gets kernel hax for 3dsx, all .cia gets dynrec
 	{
-		khaxInit();
+	    if(osGetKernelVersion() < 0x02300000)
+		    khaxInit();
+		
 		do_memory_tests();
 		has_kernel_hax = true;
 	}
@@ -188,13 +190,12 @@ int get_version_specific_addresses()
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
-			case 0x02320000: // 9.6.0
+			case 0x02320100: // 9.6.0, and hopefully anything later
+			default:
 				patchoffset = 0xDFF82284 + 0xA0;
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
-			default:
-				return 0;
 		}
 	}
 	else
@@ -217,13 +218,12 @@ int get_version_specific_addresses()
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
 				break;
-			case 0x02320000: // N3DS 9.6.0
+			case 0x02320100: // N3DS 9.6.0, and hopefully anything later
+			default:
 				patchoffset = 0xDFF82268 + 0xA0;
 				fcram_base = 0xDFF80000;
 				kernel_virtual = 0xFFF00000;
-				break;
-			default:
-				return 0;
+			    break;
 		}
 	}
 	return 1;

@@ -132,6 +132,8 @@ AccessControlInfo:
     UnmapMemoryBlock: 32
     WaitSynchronization1: 36
     WaitSynchronizationN: 37
+    ControlProcessMemory: 112
+    Backdoor: 123
   InterruptNumbers:
   ServiceAccessControl: 
    - APT:U
@@ -139,6 +141,7 @@ AccessControlInfo:
    - $hostio0
    - $hostio1
    - ac:u
+   - am:u
    - boss:U
    - cam:u
    - cecd:u
@@ -162,6 +165,8 @@ AccessControlInfo:
    - y2r:u
    - ldr:ro
    - ir:USER
+   - ir:u
+   - csnd:SND
   
    
 SystemControlInfo:
