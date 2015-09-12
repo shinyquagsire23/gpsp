@@ -340,6 +340,14 @@ int PatchKernel()
 		*(vu32*)(patchoffset) = 0xE320F000; // NOP
 		*(vu32*)(patchoffset + 8) = 0xE320F000; // NOP
 	}
+	
+	//Overkill.
+	u32*  svc_access_control = *(*(u32***)0xFFFF9000 + 0x22) - 0x6;
+
+    svc_access_control[0]=0xFFFFFFFE;
+    svc_access_control[1]=0xFFFFFFFF;
+    svc_access_control[2]=0xFFFFFFFF;
+    svc_access_control[3]=0x3FFFFFFF;
 
 	//Patch 0x2F-0x31 to point to same function to make room
 	u32 nopfunc = *(u32*)(patchoffset + (0x31*4));
