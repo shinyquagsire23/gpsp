@@ -11,6 +11,7 @@ BasicInfo:
 
 
 TitleInfo:
+  Platform                : SNAKE 
   UniqueId                : {APP_UNIQUE_ID}
   Category                : Application
   
@@ -67,6 +68,7 @@ AccessControlInfo:
   Priority                      : 16
    
   MaxCpu                        : 0x9E # Default
+  CpuSpeed                      : 804MHz
   
   CoreVersion                   : 2
   DescVersion                   : 2

@@ -19,6 +19,8 @@
 
 #include "common.h"
 
+extern void* __service_ptr; // used to detect if we're run from a homebrew launcher
+
 // Special thanks to psp298 for the analog->dpad code!
 
 void trigger_key(u32 key)
@@ -1205,7 +1207,17 @@ u32 update_input()
   }
 
   if(kHeld & (KEY_X))
+  {
+     if(!__service_ptr) //We're running as a .cia
+        aptReturnToMenu();
+     else
+        exit_time = 1;
+  }
+  
+  if(!aptMainLoop())
+  {
      exit_time = 1;
+  }
 
   return 0;
 }

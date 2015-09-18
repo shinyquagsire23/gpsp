@@ -468,7 +468,7 @@ int main(int argv, char** argc)
 		print_string(error, 0xFFFF, 0x0, 0, 0);
 		gfxFlushBuffers();
 		gfxSwapBuffers();
-		while(1)
+		while(aptMainLoop())
 		{
 			gspWaitForVBlank();
 			hidScanInput();

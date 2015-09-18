@@ -486,6 +486,7 @@ u32 update_gba()
 
   do
   {
+    aptMainLoop();
     cpu_ticks += execute_cycles;
 
     reg[CHANGED_PC_STATUS] = 0;

@@ -4395,7 +4395,7 @@ void execute_arm(u32 cycles)
   if(pc_address_block == NULL)
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);
 
-  while(1)
+  while(aptMainLoop())
   {
     cycles_remaining = cycles;
     pc = reg[REG_PC];
@@ -4419,7 +4419,7 @@ void execute_arm(u32 cycles)
 
     collapse_flags();
     cycles = update_gba();
-    if(exit_time)
+    if(exit_time || !aptMainLoop())
         break;
     continue;
 

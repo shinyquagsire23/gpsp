@@ -10,6 +10,7 @@ BasicInfo:
   # HostRoot                : "romfs"
 
 TitleInfo:
+  Platform                : SNAKE 
   UniqueId                : {APP_UNIQUE_ID}
   Category                : Application
 
@@ -90,6 +91,7 @@ AccessControlInfo:
   Priority                      : 16
    
   MaxCpu                        : 0x9E # Default
+  CpuSpeed                      : 804MHz
   
   DisableDebug                  : false
   EnableForceDebug              : false

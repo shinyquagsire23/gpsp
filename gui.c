@@ -120,6 +120,7 @@
   #define get_clock_speed_number()
 #endif
 
+extern void* __service_ptr; // used to detect if we're run from a homebrew launcher
 
 int sort_function(const void *dest_str_ptr, const void *src_str_ptr)
 {
@@ -168,7 +169,7 @@ s32 load_file(const char **wildcards, char *result)
   
   chdir("sdmc:/"); //For some reason getcwd returns / instead of sdmc:/ otherwise
 
-  while(return_value == 1)
+  while(return_value == 1 && aptMainLoop())
   {
     current_file_selection = 0;
     current_file_scroll_value = 0;
@@ -309,7 +310,7 @@ s32 load_file(const char **wildcards, char *result)
     screenBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL); 
     clearScreen(screenBottom, GFX_BOTTOM,color16(2, 4, 10));
     clearScreen(screenTopLeft, GFX_TOP,color16(2, 4, 10)); 
-    while(repeat)
+    while(repeat && aptMainLoop())
     {
       gspWaitForVBlank();
       screenTopLeft = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL); 
@@ -548,8 +549,15 @@ s32 load_file(const char **wildcards, char *result)
           break;
 
         case CURSOR_EXIT:
-          return_value = -1;
-          repeat = 0;
+          if(!__service_ptr) //We're running as a .cia
+          {
+            aptReturnToMenu();
+          }
+          else
+          {
+            return_value = -1;
+            repeat = 0;
+          }
           break;
 
         default:
@@ -573,6 +581,9 @@ s32 load_file(const char **wildcards, char *result)
 
   clear_screen(COLOR_BG);
 
+  if(!aptMainLoop())
+    return -1;
+  
   return return_value;
 }
 
