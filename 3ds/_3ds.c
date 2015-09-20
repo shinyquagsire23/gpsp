@@ -81,6 +81,46 @@ extern void* __service_ptr; // used to detect if we're run from a homebrew launc
 
 u16 *screen_buffer;
 
+static u32 __heap_size = 0x02800000;
+static u32 __linear_heap_size = 0x01000000;
+extern char* fake_heap_start;
+extern char* fake_heap_end;
+u32 __linear_heap;
+u32 __heapBase;
+
+extern void (*__system_retAddr)(void);
+
+void __destroy_handle_list(void);
+
+//We have to override these to get the heaps set in right.
+void __system_allocateHeaps() {
+	u32 tmp=0;
+
+	__heapBase = 0x08000000;
+	svcControlMemory(&tmp, __heapBase, 0x0, __heap_size, MEMOP_ALLOC, MEMPERM_READ | MEMPERM_WRITE);
+
+	svcControlMemory(&__linear_heap, 0x0, 0x0, __linear_heap_size, MEMOP_ALLOC_LINEAR, MEMPERM_READ | MEMPERM_WRITE);
+
+	fake_heap_start = (char*)__heapBase;
+	fake_heap_end = fake_heap_start + __heap_size;
+}
+
+void __attribute__((noreturn)) __libctru_exit(int rc)
+{
+	u32 tmp=0;
+
+	svcControlMemory(&tmp, __linear_heap, 0x0, __linear_heap_size, MEMOP_FREE, 0x0);
+	svcControlMemory(&tmp, __heapBase, 0x0, __heap_size, MEMOP_FREE, 0x0);
+
+
+	__destroy_handle_list();
+
+	if (__system_retAddr)
+		__system_retAddr();
+
+	svcExitProcess();
+}
+
 void gpsp_plat_init(void)
 {
 	// Initialize services

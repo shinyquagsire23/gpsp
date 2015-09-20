@@ -2132,7 +2132,7 @@ s32 load_gamepak_raw(char *name)
     // probably want to load from it more later.
     if(file_size <= gamepak_ram_buffer_size)
     {
-      gamepak_rom = linearAlloc(file_size);
+      gamepak_rom = malloc(file_size);
       file_read(gamepak_file, gamepak_rom, file_size);
 
       file_close(gamepak_file);
@@ -2146,7 +2146,7 @@ s32 load_gamepak_raw(char *name)
     else
     {
       // Read in just enough for the header
-      gamepak_rom = linearAlloc(file_size);
+      gamepak_rom = malloc(file_size);
       file_read(gamepak_file, gamepak_rom, 0x100);
       gamepak_file_large = gamepak_file;
     }
@@ -3060,22 +3060,7 @@ void init_gamepak_buffer()
 {
   // Try to initialize 32MB (this is mainly for non-PSP platforms)
   gamepak_rom = NULL;
-
   gamepak_ram_buffer_size = 32 * 1024 * 1024;
-  gamepak_rom = linearAlloc(gamepak_ram_buffer_size);
-
-  if(gamepak_rom == NULL)
-  {
-    // Try 16MB, for PSP, then lower in 2MB increments
-    gamepak_ram_buffer_size = 16 * 1024 * 1024;
-    gamepak_rom = linearAlloc(gamepak_ram_buffer_size);
-
-    while(gamepak_rom == NULL)
-    {
-      gamepak_ram_buffer_size -= (2 * 1024 * 1024);
-      gamepak_rom = linearAlloc(gamepak_ram_buffer_size);
-    }
-  }
 
   // Here's assuming we'll have enough memory left over for this,
   // and that the above succeeded (if not we're in trouble all around)
