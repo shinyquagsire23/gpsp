@@ -81,8 +81,8 @@ extern void* __service_ptr; // used to detect if we're run from a homebrew launc
 
 u16 *screen_buffer;
 
-static u32 __heap_size = 0x02800000;
-static u32 __linear_heap_size = 0x01000000;
+static u32 __heap_size = 0x02400000;
+static u32 __linear_heap_size = 0x01400000;
 extern char* fake_heap_start;
 extern char* fake_heap_end;
 u32 __linear_heap;
